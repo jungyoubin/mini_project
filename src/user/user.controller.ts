@@ -1,69 +1,38 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Patch,
-  Delete,
-  Param,
-  Body,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Patch, Delete } from '@nestjs/common';
 import { UserService } from './user.service';
-import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
-import { UpdateUserDto } from './user.dto';
+import { CreateUserDto, UpdateUserDto } from './user.dto';
 
 @Controller('user')
 export class UserController {
-  constructor(
-    private readonly userService: UserService,
-    private readonly jwtService: JwtService,
-  ) {}
+  constructor(private readonly userService: UserService) {}
 
-  // 회원가입
+  // 회원 등록
   @Post('register')
-  async register(@Body() body: any) {
-    const exists = await this.userService.findByUserId(body.user_id);
-    if (exists) throw new UnauthorizedException('이미 존재하는 아이디입니다.');
-    const user = await this.userService.createUser(body);
-    return { message: '회원가입 성공', profile_id: user.profile_id };
+  async register(@Body() body: CreateUserDto) {
+    return this.userService.createUser(body);
   }
 
-  // 로그인
-  @Post('login')
-  async login(@Body() body: any) {
-    const user = await this.userService.findByUserId(body.user_id);
-    if (!user) throw new UnauthorizedException('아이디 또는 비밀번호가 잘못되었습니다.');
-    const isMatch = await bcrypt.compare(body.user_pw, user.user_pw);
-    if (!isMatch) throw new UnauthorizedException('아이디 또는 비밀번호가 잘못되었습니다.');
-
-    const payload = { sub: user.profile_id, username: user.user_id };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-
-    return { message: '로그인 성공', accessToken };
-  }
-
-  // 전체 조회
-  @Get()
+  // 전체 유저 조회
+  @Get('all')
   async findAll() {
     return this.userService.findAll();
   }
 
-  // 단일 조회
+  // 특정 유저 조회
   @Get(':profile_id')
   async findOne(@Param('profile_id') profile_id: string) {
     return this.userService.findByProfileId(profile_id);
   }
 
-  // 수정
+  // 유저 정보 수정 (이메일, 이름, 아이디, 전화번호 등 일부 수정 가능)
   @Patch(':profile_id')
   async update(@Param('profile_id') profile_id: string, @Body() body: UpdateUserDto) {
     return this.userService.updateUser(profile_id, body);
   }
 
-  // 삭제
+  // 유저 삭제
   @Delete(':profile_id')
-  async remove(@Param('profile_id') profile_id: string) {
+  async delete(@Param('profile_id') profile_id: string) {
     return this.userService.deleteUser(profile_id);
   }
 }
