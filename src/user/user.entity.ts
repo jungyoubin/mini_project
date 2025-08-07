@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column } from 'typeorm';
+import { Entity, PrimaryColumn, Column } from 'typeorm'; // TypeORM 사용
 
 @Entity('user') // MySQL 테이블 이름
 export class User {

@@ -11,6 +11,7 @@ import {
 import { UserService } from './user.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { UpdateUserDto } from './user.dto';
 
 @Controller('user')
 export class UserController {
@@ -56,7 +57,7 @@ export class UserController {
 
   // 수정
   @Patch(':profile_id')
-  async update(@Param('profile_id') profile_id: string, @Body() body: any) {
+  async update(@Param('profile_id') profile_id: string, @Body() body: UpdateUserDto) {
     return this.userService.updateUser(profile_id, body);
   }
 

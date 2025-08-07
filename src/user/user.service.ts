@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
@@ -42,12 +42,11 @@ export class UserService {
   }
 
   // 수정
-  async updateUser(profile_id: string, data: Partial<User>) {
-    if (data.user_pw) {
-      data.user_pw = await bcrypt.hash(data.user_pw, 10);
-    }
-    await this.repo.update({ profile_id }, data);
-    return this.findByProfileId(profile_id);
+  async updateUser(profile_id: string, updateData: Partial<User>): Promise<User> {
+    const user = await this.repo.findOne({ where: { profile_id } });
+    if (!user) throw new NotFoundException('해당 유저를 찾을 수 없습니다.');
+    Object.assign(user, updateData);
+    return this.repo.save(user);
   }
 
   // 삭제
