@@ -1,0 +1,13 @@
+### 회원 가입
+### 중복된 아이디로 가입을 진행하려고 하면 이미 사용중이라고 뜸
+
+POST http://localhost:3000/auth/register
+content-type: application/json
+
+{
+    "user_id": "authtest",
+    "user_pw": "authtest!123",
+    "user_name": "보안테",
+    "user_email": "auth@coconutsilo.com",
+    "user_phone": "010-3456-7890"
+}
