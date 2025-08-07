@@ -3,7 +3,7 @@ POST http://localhost:3000/user/register
 Content-Type: application/json
 
 {
-  "user_id": "testuser",
+  "user_id": "testuser1",
   "user_pw": "Test1234!",
   "user_name": "홍길동",
   "user_email": "test@example.com",

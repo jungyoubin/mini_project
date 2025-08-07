@@ -1,11 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { HttpException, HttpStatus } from '@nestjs/common';
-import { CreateUserDto } from 'src/user/user.dto';
-import { JwtService } from '@nestjs/jwt';
+import { Injectable, HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
+import { CreateUserDto, LoginUserDto } from 'src/user/user.dto';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import { UserService } from '../user.service';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+import type { Response } from 'express';
 
 @Injectable() // provider로 사용
 export class AuthService {
@@ -44,31 +44,41 @@ export class AuthService {
     }
   }
 
-  // async validateUser(username: string, password: string) {
-  //   const user = await this.userService.findByUserId(username);
-  //   if (!user) return null;
-  //   const isMatch = await bcrypt.compare(password, user.user_pw);
-  //   return isMatch ? user : null;
-  // }
+  async login(loginDto: LoginUserDto, res: Response) {
+    const user = await this.userService.findByUserId(loginDto.user_id);
 
-  // async login(user: any) {
-  //   const payload = { username: user.username, sub: user.id };
+    if (!user) {
+      throw new UnauthorizedException('존재하지 않는 사용자입니다.');
+    }
 
-  //   const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-  //   const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const isPasswordValid = await bcrypt.compare(loginDto.user_pw, user.user_pw);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
+    }
 
-  //   await this.redis.set(`refresh:${user.id}`, refreshToken, 'EX', 60 * 60 * 24 * 7);
+    const payload = { sub: user.profile_id };
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-  //   return { accessToken, refreshToken };
-  // }
+    // refresh token을 Redis에 저장 (key: userId, value: refreshToken)
+    await this.redis.set(user.profile_id.toString(), refreshToken, 'EX', 7 * 24 * 60 * 60); // 7일
 
-  // async refreshAccessToken(userId: number, refreshToken: string) {
-  //   const savedRefreshToken = await this.redis.get(`refresh:${userId}`);
-  //   if (!savedRefreshToken || savedRefreshToken !== refreshToken) {
-  //     throw new UnauthorizedException('Invalid refresh token');
-  //   }
+    // 쿠키로 전달
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: false, // prod 환경에서는 true + https
+    });
 
-  //   const payload = { sub: userId, username: '' };
-  //   return this.jwtService.sign(payload, { expiresIn: '15m' });
-  // }
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: false,
+    });
+
+    return {
+      message: '로그인 성공',
+      user_id: user.user_id,
+      accessToken,
+      refreshToken,
+    };
+  }
 }

@@ -49,3 +49,11 @@ export class UpdateUserDto {
   })
   user_phone?: string;
 }
+
+export class LoginUserDto {
+  @IsString()
+  user_id: string;
+
+  @IsString()
+  user_pw: string;
+}
