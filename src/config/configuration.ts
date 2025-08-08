@@ -14,4 +14,8 @@ export default () => ({
     host: process.env.REDIS_HOST,
     port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
   },
+  mongo: {
+    uri: process.env.MONGO_URI || 'mongodb://localhost:27017',
+    dbName: process.env.MONGO_DB_NAME || 'chat_room_db',
+  },
 });

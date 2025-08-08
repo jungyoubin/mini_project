@@ -5,7 +5,10 @@ import { RedisModule } from '@nestjs-modules/ioredis';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './user/auth/auth.module';
 import { User } from './user/user.entity';
-import configuration from './user/config/configuration';
+import { MongooseModule } from '@nestjs/mongoose';
+import configuration from './config/configuration';
+import validationSchema from './config/validation-schema';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -47,6 +50,16 @@ import configuration from './user/config/configuration';
       }),
     }),
 
+    // mongob 연결
+    MongooseModule.forRootAsync({
+      useFactory: (configService: ConfigService) => ({
+        uri: configService.get<string>('mongo.uri'),
+        dbName: configService.get<string>('mongo.dbName'),
+      }),
+      inject: [ConfigService],
+    }),
+
+    ChatModule,
     UserModule,
     AuthModule,
   ],

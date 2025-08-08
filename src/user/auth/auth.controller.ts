@@ -1,10 +1,11 @@
 // 로그인 / 토큰 재발급 api
 
-import { Body, Controller, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { CreateUserDto, LoginUserDto } from 'src/user/user.dto';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
+import { UnauthorizedException } from '@nestjs/common';
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -27,6 +28,9 @@ export class AuthController {
   @Post('reissue') // access token 재발급
   async reissue(@Req() req: Request) {
     const refreshToken = req.headers['authorization']?.replace('Bearer ', '');
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token이 필요-> 재로그인 진행');
+    }
     return await this.authService.reissueAccessToken(refreshToken);
   }
 }
