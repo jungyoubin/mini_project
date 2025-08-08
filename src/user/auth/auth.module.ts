@@ -1,30 +1,37 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule as _JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../user.entity';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UserService } from '../user.service';
-import { UserModule } from '../user.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { JwtRefreshStrategy } from './jwt-refresh.strategy';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
     PassportModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'secretKey',
-      signOptions: { expiresIn: '15m' },
+    // 환경변수 기반 JWT 설정
+    _JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('jwt.secret'),
+        signOptions: { expiresIn: '15m' },
+      }),
     }),
+    // TypeORM 유저 엔티티
     TypeOrmModule.forFeature([User]),
 
-    RedisModule.forRoot({
-      type: 'single',
-      url: `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || '6379'}`,
+    // 환경변수 기반 Redis 설정
+    RedisModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'single',
+        url: `redis://${config.get('redis.host')}:${config.get('redis.port')}`,
+      }),
     }),
   ],
   controllers: [AuthController],

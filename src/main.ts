@@ -1,14 +1,19 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-const cookieParser = require('cookie-parser');
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // 전역 ValidationPipe 설정
   app.useGlobalPipes(new ValidationPipe());
-  // 전역 파이프에 validationPipe 객체 추가
-  app.use(cookieParser());
-  await app.listen(process.env.PORT ?? 3000);
+
+  // ConfigService 가져오기
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('port') ?? 3000;
+
+  await app.listen(port);
 }
 
 bootstrap();

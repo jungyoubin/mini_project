@@ -1,18 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { JwtPayloadDto } from './jwt-dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly configService: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // 헤더에서 accesstoken 보냄
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // 헤더에서 accesstoken 추출
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'default_secret',
+      secretOrKey: configService.get<string>('jwt.secret') || 'default_secret',
     });
   }
 
-  async validate(payload: any) {
+  validate(payload: JwtPayloadDto) {
     return { profile_id: payload.sub };
   }
 }

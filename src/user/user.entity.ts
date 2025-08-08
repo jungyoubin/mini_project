@@ -1,22 +1,46 @@
-import { Entity, PrimaryColumn, Column } from 'typeorm'; // TypeORM 사용
+// user.entity.ts
+import { Entity, PrimaryColumn, Column, BeforeInsert, BeforeUpdate } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { HttpException, HttpStatus } from '@nestjs/common';
 
-@Entity('user') // MySQL 테이블 이름
+@Entity('user')
 export class User {
-  @PrimaryColumn({ type: 'char', length: 36, comment: 'UUID' })
+  @PrimaryColumn({ type: 'char', length: 36 })
   profile_id: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: false, comment: '아이디' })
+  @Column({ type: 'varchar', length: 20, nullable: false })
   user_id: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false, comment: '비밀번호' })
+  @Column({ type: 'varchar', length: 255, nullable: false })
   user_pw: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: false, comment: '사용자 이름' })
+  @Column({ type: 'varchar', length: 20, nullable: false })
   user_name: string;
 
-  @Column({ type: 'varchar', length: 40, nullable: false, comment: '사용자 이메일' })
+  @Column({ type: 'varchar', length: 40, nullable: false })
   user_email: string;
 
-  @Column({ type: 'varchar', length: 13, nullable: false, comment: '사용자 휴대폰' })
+  @Column({ type: 'varchar', length: 13, nullable: false })
   user_phone: string;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  async hashPassword(): Promise<void> {
+    try {
+      if (this.user_pw) {
+        const salt = 10;
+        this.user_pw = await bcrypt.hash(this.user_pw, salt);
+      }
+    } catch (err) {
+      throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR, { cause: err });
+    }
+  }
+
+  async checkPassword(password: string): Promise<boolean> {
+    try {
+      return await bcrypt.compare(password, this.user_pw);
+    } catch (err) {
+      return false;
+    }
+  }
 }

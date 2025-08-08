@@ -1,34 +1,50 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './user/auth/auth.module';
 import { User } from './user/user.entity';
+import configuration from './user/config/configuration';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration],
+      validationSchema,
+      envFilePath: '.env',
+    }),
 
     // MySQL 연결
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT!, 10),
-      username: process.env.DB_USER,
-      password: process.env.DB_PASS,
-      database: process.env.DB_NAME,
-      entities: [User],
-      synchronize: false, // 이미 테이블이 있으니 false
+    // TypeORM 설정: 환경변수 기반
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'mysql',
+        host: config.get('database.host'),
+        port: config.get<number>('database.port'),
+        username: config.get('database.username'),
+        password: config.get('database.password'),
+        database: config.get('database.name'),
+        entities: [User],
+        synchronize: false,
+      }),
     }),
 
     // Redis 연결
-    RedisModule.forRoot({
-      type: 'single',
-      options: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379', 10),
-      },
+    // Redis 설정: 환경변수 기반
+    RedisModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'single',
+        options: {
+          host: config.get('redis.host'),
+          port: config.get<number>('redis.port'),
+        },
+      }),
     }),
 
     UserModule,

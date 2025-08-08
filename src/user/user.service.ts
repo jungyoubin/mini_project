@@ -16,16 +16,15 @@ export class UserService {
     user_email: string;
     user_phone: string;
   }) {
-    const hashedPw = await bcrypt.hash(data.user_pw, 10);
     const newUser = this.repo.create({
       profile_id: uuidv4(),
       user_id: data.user_id,
-      user_pw: hashedPw,
+      user_pw: data.user_pw,
       user_name: data.user_name,
       user_email: data.user_email,
       user_phone: data.user_phone,
     });
-    return this.repo.save(newUser);
+    return await this.repo.save(newUser);
   }
 
   async findByUserId(user_id: string) {
