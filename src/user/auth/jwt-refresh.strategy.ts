@@ -8,7 +8,7 @@ import { StrategyOptionsWithRequest } from 'passport-jwt';
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor() {
     const options: StrategyOptionsWithRequest = {
-      jwtFromRequest: ExtractJwt.fromExtractors([(req: Request) => req.cookies?.refresh_token]),
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: process.env.JWT_SECRET || 'default_secret',
       passReqToCallback: true,
     };
@@ -16,6 +16,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
   }
 
   async validate(req: Request, payload: any) {
+    // 필요한 경우 req에서 쿠키나 헤더 검사 가능
     return { id: payload.sub, username: payload.username };
   }
 }

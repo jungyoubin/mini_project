@@ -63,22 +63,32 @@ export class AuthService {
     // refresh token을 Redis에 저장 (key: userId, value: refreshToken)
     await this.redis.set(user.profile_id.toString(), refreshToken, 'EX', 7 * 24 * 60 * 60); // 7일
 
-    // 쿠키로 전달
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: false, // prod 환경에서는 true + https
-    });
-
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: false,
-    });
-
     return {
       message: '로그인 성공',
       user_id: user.user_id,
       accessToken,
       refreshToken,
     };
+  }
+
+  async reissueAccessToken(refreshToken: string) {
+    try {
+      // refresh token 검증
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: process.env.JWT_SECRET || 'default_secret',
+      });
+
+      const storedToken = await this.redis.get(payload.sub.toString());
+      if (!storedToken || storedToken !== refreshToken) {
+        throw new UnauthorizedException('유효하지 않은 refresh token');
+      }
+
+      // access token 재발급
+      const newAccessToken = this.jwtService.sign({ sub: payload.sub }, { expiresIn: '1h' });
+
+      return { accessToken: newAccessToken };
+    } catch (err) {
+      throw new UnauthorizedException('refresh token이 만료되었거나 유효하지 않습니다.');
+    }
   }
 }

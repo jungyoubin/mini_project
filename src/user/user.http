@@ -14,7 +14,7 @@ Content-Type: application/json
 GET http://localhost:3000/user/all
 
 ### 특정 유저 조회 (profile_id는 실제 UUID로 대체)
-GET http://localhost:3000/user/adae42ec-55f6-48d0-b615-ebbbd2d79977
+GET http://localhost:3000/user/4f80058f-79cb-40b9-bdae-b595d00f3995
 
 
 ### 유저 수정
