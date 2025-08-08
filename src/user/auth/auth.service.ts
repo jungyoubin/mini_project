@@ -42,7 +42,11 @@ export class AuthService {
       throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
     }
 
-    const payload = { sub: user.profile_id };
+    const payload = {
+      profile_id: user.profile_id,
+      user_name: user.user_name,
+    };
+
     const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
@@ -62,14 +66,20 @@ export class AuthService {
     try {
       const jwtSecret = this.configService.get<string>('jwt.secret') || 'default_secret';
 
-      const payload = this.jwtService.verify(refreshToken, { secret: jwtSecret });
+      const payload = this.jwtService.verify<JwtPayloadDto>(refreshToken, { secret: jwtSecret });
 
-      const storedToken = await this.redis.get(payload.sub.toString());
+      const storedToken = await this.redis.get(payload.profile_id.toString());
       if (!storedToken || storedToken !== refreshToken) {
         throw new UnauthorizedException('유효하지 않은 refresh token');
       }
 
-      const newAccessToken = this.jwtService.sign({ sub: JwtPayloadDto }, { expiresIn: '1h' });
+      const newAccessToken = this.jwtService.sign(
+        {
+          profile_id: payload.profile_id,
+          user_name: payload.user_name,
+        },
+        { expiresIn: '1h' },
+      );
 
       return { accessToken: newAccessToken };
     } catch (err) {

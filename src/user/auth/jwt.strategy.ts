@@ -13,8 +13,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       secretOrKey: configService.get<string>('jwt.secret') || 'default_secret',
     });
   }
-
+  // payload 리턴할때 이 구조로 return
+  // req.user에는 이 3개가 들어온다
   validate(payload: JwtPayloadDto) {
-    return { profile_id: payload.sub };
+    console.log('JWT payload:', payload);
+
+    return {
+      profile_id: payload.profile_id ?? payload.sub,
+      user_name: payload.user_name ?? null,
+    };
   }
 }

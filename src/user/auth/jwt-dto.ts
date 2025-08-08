@@ -1,3 +1,6 @@
 export class JwtPayloadDto {
-  sub: string;
+  profile_id: string;
+  user_name: string;
+  sub?: string;
+  access_token?: string;
 }
