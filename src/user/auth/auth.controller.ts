@@ -1,10 +1,10 @@
-// 로그인 / 토큰 재발급 api
-
-import { Body, Controller, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { CreateUserDto, LoginUserDto } from 'src/user/user.dto';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
+
+// 로그인 / 토큰 재발급 api
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -26,7 +26,12 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt-refresh'))
   @Post('reissue') // access token 재발급
   async reissue(@Req() req: Request) {
-    const refreshToken = req.headers['authorization']?.replace('Bearer ', '');
-    return await this.authService.reissueAccessToken(refreshToken);
+    // JwtRefreshStrategy.validate() 에서 준거
+    const { refreshToken, profile_id, user_name } = req.user as {
+      refreshToken: string;
+      profile_id: string;
+      user_name?: string;
+    };
+    return await this.authService.reissueAccessToken(refreshToken, { profile_id, user_name });
   }
 }
