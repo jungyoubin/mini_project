@@ -1,24 +1,33 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { JwtPayloadDto } from './jwt-dto';
+import type { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 
+type RefreshPayload = {
+  sub: string; // profile_id
+  user_name?: string;
+};
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(private readonly configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // Bearer <token>
       secretOrKey: configService.get<string>('jwt.secret') || 'default_secret',
-      passReqToCallback: true,
+      passReqToCallback: true, // req를 validate에 전달
     });
   }
 
-  async validate(payload: JwtPayloadDto) {
+  validate(req: Request, payload: RefreshPayload) {
+    // 헤더에서 원본 토큰 가져옴(Redis 비교하기 위해서)
+    const tokenExtractor = ExtractJwt.fromAuthHeaderAsBearerToken();
+    const refreshToken = tokenExtractor(req) || '';
+
+    // req.user에 보내질 부분(controller에서 바로 사용함)
     return {
-      profile_id: payload.profile_id,
+      profile_id: payload.sub,
       user_name: payload.user_name,
-      access_token: payload.access_token,
+      refreshToken, // 원본 문자열
     };
   }
 }

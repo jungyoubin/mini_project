@@ -2,26 +2,20 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import { v4 as uuidv4 } from 'uuid';
+import { CreateUserDto, UpdateUserDto } from './user.dto';
 
 @Injectable()
 export class UserService {
   constructor(@InjectRepository(User) private repo: Repository<User>) {}
 
-  async createUser(data: {
-    user_id: string;
-    user_pw: string;
-    user_name: string;
-    user_email: string;
-    user_phone: string;
-  }) {
+  async createUser(dto: CreateUserDto) {
+    const sanitizedPhone = dto.user_phone.replace(/-/g, ''); // 불필요 양식 제거 - 하이픈 같은거
     const newUser = this.repo.create({
-      profile_id: uuidv4(),
-      user_id: data.user_id,
-      user_pw: data.user_pw,
-      user_name: data.user_name,
-      user_email: data.user_email,
-      user_phone: data.user_phone,
+      user_id: dto.user_id,
+      user_pw: dto.user_pw,
+      user_name: dto.user_name,
+      user_email: dto.user_email,
+      user_phone: sanitizedPhone,
     });
     return await this.repo.save(newUser);
   }
@@ -39,11 +33,19 @@ export class UserService {
     return this.repo.find();
   }
 
-  // 수정
-  async updateUser(profile_id: string, updateData: Partial<User>): Promise<User> {
+  // 수정(name, email, phone만 가능)
+  async updateUser(profile_id: string, dto: UpdateUserDto): Promise<User> {
     const user = await this.repo.findOne({ where: { profile_id } });
     if (!user) throw new NotFoundException('해당 유저를 찾을 수 없습니다.');
-    Object.assign(user, updateData);
+
+    const { user_name, user_email } = dto;
+    const user_phone = dto.user_phone ? dto.user_phone.replace(/-/g, '') : undefined;
+
+    // 허용된 필드만 반영
+    if (user_name !== undefined) user.user_name = user_name;
+    if (user_email !== undefined) user.user_email = user_email;
+    if (user_phone !== undefined) user.user_phone = user_phone;
+
     return this.repo.save(user);
   }
 

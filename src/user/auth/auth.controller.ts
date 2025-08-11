@@ -1,11 +1,9 @@
-import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { CreateUserDto, LoginUserDto } from 'src/user/user.dto';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
-import type { Request, Response } from 'express';
-import { UnauthorizedException } from '@nestjs/common';
+import type { Request } from 'express';
 
-// 로그인 / 토큰 재발급
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -20,17 +18,26 @@ export class AuthController {
   }
 
   @Post('login') // 로그인
-  async login(@Body() loginDto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
-    return await this.authService.login(loginDto, res);
+  async login(@Body() loginDto: LoginUserDto) {
+    return await this.authService.login(loginDto);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('logout')
+  async logout(@Req() req: Request) {
+    const user = req.user as { profile_id: string };
+    return await this.authService.logout(user.profile_id);
   }
 
   @UseGuards(AuthGuard('jwt-refresh'))
   @Post('reissue') // access token 재발급
   async reissue(@Req() req: Request) {
-    const refreshToken = req.headers['authorization']?.replace('Bearer ', '');
-    if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token이 필요-> 재로그인 진행');
-    }
-    return await this.authService.reissueAccessToken(refreshToken);
+    // JwtRefreshStrategy.validate() 에서 준거
+    const { refreshToken, profile_id, user_name } = req.user as {
+      refreshToken: string;
+      profile_id: string;
+      user_name?: string;
+    };
+    return await this.authService.reissueAccessToken(refreshToken, { profile_id, user_name });
   }
 }

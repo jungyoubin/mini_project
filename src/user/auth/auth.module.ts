@@ -1,21 +1,23 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
-import { JwtModule as _JwtModule } from '@nestjs/jwt';
+import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../user.entity';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UserService } from '../user.service';
 import { RedisModule } from '@nestjs-modules/ioredis';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { JwtRefreshStrategy } from './jwt-refresh.strategy';
 
 @Module({
   imports: [
+    ConfigModule,
     PassportModule,
-    // 환경변수 기반 JWT 설정
-    _JwtModule.registerAsync({
+    // JWT 설정
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('jwt.secret'),
@@ -25,8 +27,9 @@ import { JwtRefreshStrategy } from './jwt-refresh.strategy';
     // TypeORM 유저 엔티티
     TypeOrmModule.forFeature([User]),
 
-    // 환경변수 기반 Redis 설정
+    // Redis 설정
     RedisModule.forRootAsync({
+      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'single',
@@ -36,5 +39,6 @@ import { JwtRefreshStrategy } from './jwt-refresh.strategy';
   ],
   controllers: [AuthController],
   providers: [AuthService, UserService, JwtStrategy, JwtRefreshStrategy],
+  exports: [JwtModule],
 })
 export class AuthModule {}

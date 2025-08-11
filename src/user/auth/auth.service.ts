@@ -4,8 +4,6 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import { UserService } from '../user.service';
 import { JwtService } from '@nestjs/jwt';
-import type { Response } from 'express';
-import { JwtPayloadDto } from './jwt-dto';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -26,12 +24,12 @@ export class AuthService {
       const newUser = await this.userService.createUser(userDto);
       const { user_pw, ...safeUser } = newUser;
       return safeUser;
-    } catch (error) {
+    } catch (err) {
       throw new HttpException('서버 에러', 500);
     }
   }
 
-  async login(loginDto: LoginUserDto, res: Response) {
+  async login(loginDto: LoginUserDto) {
     const user = await this.userService.findByUserId(loginDto.user_id);
     if (!user) {
       throw new UnauthorizedException('존재하지 않는 사용자입니다.');
@@ -42,15 +40,18 @@ export class AuthService {
       throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
     }
 
-    const payload = {
-      profile_id: user.profile_id,
-      user_name: user.user_name,
-    };
+    // TTL을 config에서 가져오기
+    const accessTTL = this.configService.get<string>('jwt.accessTTL', '1h');
+    const refreshTTL = this.configService.get<string>('jwt.refreshTTL', '7d');
 
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    // req.user에서 사용하고 싶은 값은 payload에 넣어두자 -> profile_id, user_name
+    const payload = { sub: user.profile_id, user_name: user.user_name };
 
-    await this.redis.set(user.profile_id.toString(), refreshToken, 'EX', 7 * 24 * 60 * 60);
+    const accessToken = this.jwtService.sign(payload, { expiresIn: accessTTL });
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: refreshTTL });
+
+    // redis 저장
+    await this.redis.set('rt:${user.profile_id}', refreshToken, 'EX', 7 * 24 * 60 * 60);
 
     return {
       message: '로그인 성공',
@@ -62,27 +63,30 @@ export class AuthService {
     };
   }
 
-  async reissueAccessToken(refreshToken: string) {
+  async logout(profile_id: string) {
+    await this.redis.del(profile_id.toString());
+    return { message: '로그아웃 완료' };
+  }
+
+  async reissueAccessToken(
+    refreshToken: string,
+    payloadFromGuard: { profile_id: string; user_name?: string },
+  ) {
     try {
-      const jwtSecret = this.configService.get<string>('jwt.secret') || 'default_secret';
+      // Redis에서 사용자별 저장된 refresh 토큰 가져와 비교
+      const stored = await this.redis.get('rt:${user.profile_id}');
 
-      const payload = this.jwtService.verify<JwtPayloadDto>(refreshToken, { secret: jwtSecret });
-
-      const storedToken = await this.redis.get(payload.profile_id.toString());
-      if (!storedToken || storedToken !== refreshToken) {
+      if (!stored || stored !== refreshToken) {
         throw new UnauthorizedException('유효하지 않은 refresh token');
       }
-
+      const accessTTL = this.configService.get<string>('jwt.accessTTL', '1h');
       const newAccessToken = this.jwtService.sign(
-        {
-          profile_id: payload.profile_id,
-          user_name: payload.user_name,
-        },
-        { expiresIn: '1h' },
+        { sub: payloadFromGuard.profile_id, user_name: payloadFromGuard.user_name },
+        { expiresIn: accessTTL },
       );
 
       return { accessToken: newAccessToken };
-    } catch (err) {
+    } catch {
       throw new UnauthorizedException('refresh token이 만료되었거나 유효하지 않습니다.');
     }
   }
