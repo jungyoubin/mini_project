@@ -27,8 +27,14 @@ export class User {
   async hashPassword(): Promise<void> {
     try {
       if (this.user_pw) {
-        const salt = 10;
-        this.user_pw = await bcrypt.hash(this.user_pw, salt);
+        // 이미 bcrypt 형태면 재해시하지 않기로 하기 -> user_pw를 만나면 계속 해시 하기때문에
+        if (
+          !this.user_pw.startsWith('$2a$') &&
+          !this.user_pw.startsWith('$2b$') &&
+          !this.user_pw.startsWith('$2y$')
+        ) {
+          this.user_pw = await bcrypt.hash(this.user_pw, 10);
+        }
       }
     } catch (err) {
       throw new HttpException(err, HttpStatus.INTERNAL_SERVER_ERROR, { cause: err });
