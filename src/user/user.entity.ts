@@ -1,4 +1,3 @@
-// user.entity.ts
 import { Entity, PrimaryColumn, Column, BeforeInsert, BeforeUpdate } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { HttpException, HttpStatus } from '@nestjs/common';
