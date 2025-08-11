@@ -21,18 +21,16 @@ export class CreateUserDto {
   user_email: string;
 
   @IsString()
-  @Matches(/^01[016789]-\d{3,4}-\d{4}$/, {
-    message: '전화번호 형식은 010-1234-5678과 같아야 합니다.',
+  // 하이픈 유/무 모두 허용: 010-1234-5678 또는 01012345678
+  @Matches(/^(01[016789])-?\d{3,4}-?\d{4}$/, {
+    message: '전화번호 형식이 올바르지 않습니다. 예) 010-1234-5678 또는 01012345678',
   })
   user_phone: string;
 }
-
+/* user_name, user_email, user_phone만 수정 가능
+추후에 user_pw 도 수정이 가능하도록 기능 업데이트하기
+각각  부분적으로 수정이 가능하게 진행 */
 export class UpdateUserDto {
-  @IsOptional()
-  @IsString()
-  @Length(4, 20)
-  user_id?: string;
-
   @IsOptional()
   @IsString()
   @Length(2, 20)
