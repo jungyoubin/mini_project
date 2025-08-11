@@ -16,7 +16,6 @@ export class UserService {
     user_phone: string;
   }) {
     const newUser = this.repo.create({
-      profile_id: uuidv4(),
       user_id: data.user_id,
       user_pw: data.user_pw,
       user_name: data.user_name,
