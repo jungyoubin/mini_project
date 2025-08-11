@@ -1,4 +1,5 @@
-// src/chat/schemas/message.schema.ts
+// 메시지 저장되는 db
+
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 

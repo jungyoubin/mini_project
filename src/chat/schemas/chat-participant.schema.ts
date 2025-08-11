@@ -1,3 +1,5 @@
+// 채팅방 참여자 확인 DB
+
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 

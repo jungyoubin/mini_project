@@ -1,11 +1,11 @@
-// 로그인 / 토큰 재발급 api
-
 import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { CreateUserDto, LoginUserDto } from 'src/user/user.dto';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
 import { UnauthorizedException } from '@nestjs/common';
+
+// 로그인 / 토큰 재발급
 @Controller('auth')
 export class AuthController {
   constructor(

@@ -37,6 +37,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.leave(roomId);
 
         if (sockets.size === 0) {
+          // 아무도 없을때
           this.roomParticipants.delete(roomId);
           await this.chatService.deleteRoomAndMessages(roomId); // 메시지 + 방 삭제
           console.log(`🗑 Room ${roomId} deleted because all users left.`);
@@ -59,7 +60,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const participants = this.roomParticipants.get(roomId)!;
     participants.add(client.id);
 
-    console.log(`🚪 Client ${client.id} joined room ${roomId}`);
+    console.log(`Client ${client.id} joined room ${roomId}`);
   }
 
   // 메시지 전송

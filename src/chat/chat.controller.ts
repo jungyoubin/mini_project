@@ -5,7 +5,7 @@ import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
 import { JwtPayloadDto } from 'src/user/auth/jwt-dto';
 
-// 🔥 여기에 타입 확장 정의 추가 (가장 핵심)
+// ㄴ타입 확장 정의 추가
 interface AuthRequest extends Request {
   user: JwtPayloadDto;
 }

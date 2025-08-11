@@ -10,7 +10,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    // 기본 DB(chat_room_db)로 방 + 참여자 연결
+    // 채팅방 DB(chat_room_db)로 방 + 참여자 연결
     MongooseModule.forFeature([
       { name: ChatRoom.name, schema: ChatRoomSchema },
       { name: ChatParticipant.name, schema: ChatParticipantSchema },
