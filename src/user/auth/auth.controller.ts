@@ -2,7 +2,7 @@ import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { CreateUserDto, LoginUserDto } from 'src/user/user.dto';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 
 // 로그인 / 토큰 재발급 api
 @Controller('auth')
@@ -19,8 +19,15 @@ export class AuthController {
   }
 
   @Post('login') // 로그인
-  async login(@Body() loginDto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
-    return await this.authService.login(loginDto, res);
+  async login(@Body() loginDto: LoginUserDto) {
+    return await this.authService.login(loginDto);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('logout')
+  async logout(@Req() req: Request) {
+    const user = req.user as { profile_id: string };
+    return await this.authService.logout(user.profile_id);
   }
 
   @UseGuards(AuthGuard('jwt-refresh'))
