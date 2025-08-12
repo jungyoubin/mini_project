@@ -1,0 +1,32 @@
+### 회원가입
+POST http://localhost:3000/user/register
+Content-Type: application/json
+
+{
+  "user_id": "testuser1",
+  "user_pw": "Test1234!",
+  "user_name": "홍길동",
+  "user_email": "test@example.com",
+  "user_phone": "010-1234-5678"
+}
+
+### 전체 유저 조회
+GET http://localhost:3000/user/all
+
+### 특정 유저 조회 (profile_id는 실제 UUID로 대체)
+GET http://localhost:3000/user/4f80058f-79cb-40b9-bdae-b595d00f3995
+
+
+### 유저 수정
+PATCH http://localhost:3000/user/adae42ec-55f6-48d0-b615-ebbbd2d79977
+Content-Type: application/json
+
+{
+  "user_name": "김길동",
+  "user_email" : "gildong@coconutsilo.com",
+  "user_phone" : "010-1111-1111"
+}
+
+
+### 유저 삭제
+DELETE http://localhost:3000/user/3c99162b-6b00-4e28-9201-420e4c7580a1
