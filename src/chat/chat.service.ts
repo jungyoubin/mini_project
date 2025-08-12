@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ChatRoom, ChatRoomDocument } from './schemas/chat-room.schema';
-import { ChatMessage } from './schemas/message.schema';
+import { ChatMessage, ChatMessageDocument } from './schemas/message.schema';
 import { ChatParticipant, ChatParticipantDocument } from './schemas/chat-participant.schema';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -13,16 +13,16 @@ export class ChatService {
   constructor(
     @InjectModel(ChatRoom.name) private chatRoomModel: Model<ChatRoomDocument>,
     @InjectModel(ChatParticipant.name) private participantModel: Model<ChatParticipantDocument>,
-    @InjectModel(ChatMessage.name, 'messageConnection')
-    private readonly messageModel: Model<ChatMessage>,
+    @InjectModel(ChatMessage.name)
+    private readonly messageModel: Model<ChatMessageDocument>,
   ) {}
 
-  // 방 만들기
+  // 방 만들기 (생성자 자동 참여)
   async createRoom(createRoomDto: CreateRoomDto, user: JwtPayloadDto) {
     const room = new this.chatRoomModel({
-      ...createRoomDto,
       room_id: uuidv4(),
       room_date: new Date(),
+      room_title: createRoomDto.room_title,
       created_by: user.profile_id,
     });
 
@@ -34,7 +34,14 @@ export class ChatService {
 
   // 방 목록 조회
   async getAllRooms(): Promise<ChatRoom[]> {
-    return this.chatRoomModel.find().select('-__v').exec();
+    return this.chatRoomModel.find().select('-__v').lean().exec();
+  }
+
+  // 개별 방 조회
+  async getRoom(room_id: string): Promise<ChatRoom> {
+    const room = await this.chatRoomModel.findOne({ room_id }).lean().exec();
+    if (!room) throw new NotFoundException('해당 방이 존재하지 않습니다.');
+    return room;
   }
 
   // 방 입장
@@ -43,9 +50,10 @@ export class ChatService {
     const room = await this.chatRoomModel.findOne({ room_id });
     if (!room) throw new NotFoundException('해당 방이 존재하지 않습니다.');
 
-    const existing = await this.participantModel.findOne({ room_id, profile_id });
-    if (!existing) {
+    try {
       await this.participantModel.create({ room_id, profile_id });
+    } catch (err) {
+      // 이미 참가 중이면 무시(유니크 인덱스 충돌)
     }
     return { message: '방 입장 완료' };
   }
@@ -62,32 +70,5 @@ export class ChatService {
     }
 
     return { message: '퇴장 완료' };
-  }
-
-  // 메시지 저장
-  async saveMessage({
-    message_id,
-    profile_id,
-    room_id,
-    chat_message,
-  }: {
-    message_id: string;
-    profile_id: string;
-    room_id: string;
-    chat_message: string;
-  }) {
-    return await this.messageModel.create({
-      message_id,
-      profile_id,
-      room_id,
-      chat_message,
-      chat_date: new Date(),
-    });
-  }
-
-  // 메시지 삭제
-  async deleteRoomAndMessages(room_id: string) {
-    await this.chatRoomModel.deleteOne({ room_id });
-    await this.messageModel.deleteMany({ room_id });
   }
 }

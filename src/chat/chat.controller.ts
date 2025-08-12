@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Req, Get, Delete, Param } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, Get, Delete, Param, Query } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -10,6 +10,7 @@ interface AuthRequest extends Request {
   user: JwtPayloadDto;
 }
 
+// 방 상세
 @Controller('chat')
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
@@ -17,15 +18,17 @@ export class ChatController {
   @Post('room')
   @UseGuards(AuthGuard('jwt'))
   async createRoom(@Body() dto: CreateRoomDto, @Req() req: AuthRequest) {
-    const user = req.user;
-    console.log('user:', user);
-    const room = await this.chatService.createRoom(dto, user);
-    return room;
+    return this.chatService.createRoom(dto, req.user);
   }
 
   @Get('rooms')
   getRooms() {
     return this.chatService.getAllRooms();
+  }
+
+  @Get('room/:roomId')
+  getRoom(@Param('roomId') roomId: string) {
+    return this.chatService.getRoom(roomId);
   }
 
   @UseGuards(AuthGuard('jwt'))

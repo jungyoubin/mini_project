@@ -7,13 +7,13 @@ import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-
 @Module({
   imports: [
     // 채팅방 DB(chat_room_db)로 방 + 참여자 연결
     MongooseModule.forFeature([
       { name: ChatRoom.name, schema: ChatRoomSchema },
       { name: ChatParticipant.name, schema: ChatParticipantSchema },
+      { name: ChatMessage.name, schema: ChatMessageSchema },
     ]),
 
     // 메시지용 DB(chat_message_db) 연결

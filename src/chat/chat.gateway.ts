@@ -24,30 +24,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(private readonly chatService: ChatService) {}
 
-  // 클라이언트 연결 시
-  handleConnection(client: Socket) {
-    console.log('Client connected:', client.id);
-  }
-
-  // 클라이언트 연결 종료 시
-  async handleDisconnect(client: Socket) {
-    for (const [roomId, sockets] of this.roomParticipants.entries()) {
-      if (sockets.has(client.id)) {
-        sockets.delete(client.id);
-        client.leave(roomId);
-
-        if (sockets.size === 0) {
-          // 아무도 없을때
-          this.roomParticipants.delete(roomId);
-          await this.chatService.deleteRoomAndMessages(roomId); // 메시지 + 방 삭제
-          console.log(`🗑 Room ${roomId} deleted because all users left.`);
-        }
-        break;
-      }
-    }
-    console.log('Client disconnected:', client.id);
-  }
-
   // 방 입장
   @SubscribeMessage('joinRoom')
   handleJoinRoom(client: Socket, roomId: string) {
@@ -90,6 +66,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       chat_date: new Date(),
     });
 
-    console.log(`💬 [${payload.room_id}] ${payload.profile_id}: ${payload.chat_message}`);
+    console.log(` [${payload.room_id}] ${payload.profile_id}: ${payload.chat_message}`);
   }
 }
