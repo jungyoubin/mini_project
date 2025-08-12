@@ -52,11 +52,12 @@ import { ChatModule } from './chat/chat.module';
 
     // mongob 연결
     MongooseModule.forRootAsync({
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('mongo.uri'),
-        dbName: configService.get<string>('mongo.dbName'),
-      }),
+      imports: [ConfigModule],
       inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri: config.get<string>('mongo.uri')!,
+        dbName: config.get<string>('mongo.dbName')!,
+      }),
     }),
 
     ChatModule,

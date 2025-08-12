@@ -4,68 +4,84 @@ import {
   WebSocketServer,
   OnGatewayDisconnect,
   OnGatewayConnection,
+  MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
-import { v4 as uuidv4 } from 'uuid';
+import { v7 as uuidv7 } from 'uuid';
+import { WsJwtGuard } from './guards/ws-jwt.guard';
+import { UseGuards } from '@nestjs/common';
 
-@WebSocketGateway({ cors: true })
+@WebSocketGateway({ cors: { origin: '*' } })
+@UseGuards(WsJwtGuard)
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  /**
-   * roomParticipants 구조:
-   * {
-   *   [roomId: string]: Set<socket.id>
-   * }
-   */
   private roomParticipants: Map<string, Set<string>> = new Map();
 
   constructor(private readonly chatService: ChatService) {}
 
+  // 클라이언트 연결 시
+  handleConnection(client: Socket) {
+    console.log('Client connected:', client.id);
+  }
+
+  // 클라이언트 연결 종료 시
+  handleDisconnect(client: Socket) {
+    for (const [roomId, sockets] of this.roomParticipants.entries()) {
+      if (sockets.delete(client.id) && sockets.size === 0) this.roomParticipants.delete(roomId);
+    }
+  }
+
   // 방 입장
   @SubscribeMessage('joinRoom')
-  handleJoinRoom(client: Socket, roomId: string) {
+  async join(@ConnectedSocket() client: Socket, @MessageBody() roomId: string) {
     client.join(roomId);
+    if (!this.roomParticipants.has(roomId)) this.roomParticipants.set(roomId, new Set());
+    this.roomParticipants.get(roomId)!.add(client.id);
 
-    if (!this.roomParticipants.has(roomId)) {
-      this.roomParticipants.set(roomId, new Set());
-    }
-
-    const participants = this.roomParticipants.get(roomId)!;
-    participants.add(client.id);
-
-    console.log(`Client ${client.id} joined room ${roomId}`);
+    const history = await this.chatService.getRoomMessages(roomId, 50);
+    client.emit('history', history.reverse());
   }
 
   // 메시지 전송
   @SubscribeMessage('sendMessage')
   async handleMessage(
-    client: Socket,
-    payload: {
-      room_id: string;
-      profile_id: string;
-      chat_message: string;
-    },
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { room_id: string; chat_message: string; user_name?: string },
   ) {
-    const message_id = uuidv4();
+    const message_id = uuidv7();
+    const user = (client as any).user as { profile_id: string; user_name?: string };
 
-    // DB 저장
+    const user_name = user?.user_name ?? payload.user_name ?? 'Unknown';
+
     await this.chatService.saveMessage({
       message_id,
-      profile_id: payload.profile_id,
+      profile_id: user.profile_id,
+      user_name,
       room_id: payload.room_id,
       chat_message: payload.chat_message,
     });
 
-    // 해당 방 모든 유저에게 메시지 전송
     this.server.to(payload.room_id).emit('newMessage', {
       message_id,
-      ...payload,
+      room_id: payload.room_id,
+      profile_id: user.profile_id,
+      user_name,
+      chat_message: payload.chat_message,
       chat_date: new Date(),
     });
+  }
 
-    console.log(` [${payload.room_id}] ${payload.profile_id}: ${payload.chat_message}`);
+  @SubscribeMessage('leaveRoom')
+  leave(@ConnectedSocket() client: Socket, @MessageBody() roomId: string) {
+    client.leave(roomId);
+    const set = this.roomParticipants.get(roomId);
+    if (set) {
+      set.delete(client.id);
+      if (set.size === 0) this.roomParticipants.delete(roomId);
+    }
   }
 }

@@ -3,7 +3,8 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-@Schema()
+export type ChatMessageDocument = ChatMessage & Document;
+@Schema({ versionKey: false, collection: 'message' })
 export class ChatMessage extends Document {
   @Prop({ required: true })
   message_id: string;
@@ -15,10 +16,15 @@ export class ChatMessage extends Document {
   room_id: string;
 
   @Prop({ required: true })
+  user_name: string;
+
+  @Prop({ required: true })
   chat_message: string;
 
-  @Prop({ required: true, default: Date.now })
+  @Prop({ required: true, default: Date.now, index: true })
   chat_date: Date;
 }
 
 export const ChatMessageSchema = SchemaFactory.createForClass(ChatMessage);
+
+ChatMessageSchema.index({ room_id: 1, chat_date: -1 }); // 조회 편하게 하기 위해서

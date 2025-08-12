@@ -17,7 +17,7 @@ export class ChatController {
 
   @Post('room')
   @UseGuards(AuthGuard('jwt'))
-  async createRoom(@Body() dto: CreateRoomDto, @Req() req: AuthRequest) {
+  createRoom(@Body() dto: CreateRoomDto, @Req() req: AuthRequest) {
     return this.chatService.createRoom(dto, req.user);
   }
 
@@ -31,11 +31,15 @@ export class ChatController {
     return this.chatService.getRoom(roomId);
   }
 
+  @Get('room/:roomId/participants')
+  getRoomParticipants(@Param('roomId') roomId: string) {
+    return this.chatService.getRoomParticipants(roomId);
+  }
+
   @UseGuards(AuthGuard('jwt'))
   @Post('join/:roomId')
-  async joinRoom(@Req() req: AuthRequest, @Param('roomId') roomId: string) {
-    console.log('[joinRoom] req.user:', req.user);
-    return this.chatService.joinRoom(roomId, req.user.profile_id);
+  joinRoom(@Req() req: AuthRequest, @Param('roomId') roomId: string) {
+    return this.chatService.joinRoom(roomId, req.user.profile_id, req.user.user_name);
   }
 
   @Delete('room/leave/:roomId')

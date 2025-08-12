@@ -7,6 +7,8 @@ import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { WsJwtGuard } from './guards/ws-jwt.guard';
+
 @Module({
   imports: [
     // 채팅방 DB(chat_room_db)로 방 + 참여자 연결
@@ -32,7 +34,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     ),
   ],
   controllers: [ChatController],
-  providers: [ChatService, ChatGateway],
+  providers: [ChatService, ChatGateway, WsJwtGuard],
   exports: [ChatService],
 })
 export class ChatModule {}

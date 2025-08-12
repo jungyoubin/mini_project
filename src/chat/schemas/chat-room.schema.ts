@@ -5,7 +5,7 @@ import { Document } from 'mongoose';
 
 export type ChatRoomDocument = ChatRoom & Document;
 
-@Schema({ versionKey: false })
+@Schema({ versionKey: false, collection: 'chatroom' })
 export class ChatRoom {
   @Prop({ type: String, required: true, unique: true })
   room_id: string;

@@ -18,7 +18,6 @@ export default Joi.object({
   REDIS_HOST: Joi.string().required(),
   REDIS_PORT: Joi.number().required(),
 
-  MONGO_URI: Joi.string().required(),
-  MONGO_DB_NAME: Joi.string().required(),
-  MONGO_DB_MESSAGE_NAME: Joi.string().required(),
+  MONGO_DB_CONNECT: Joi.string().uri().required(),
+  MONGO_DB_NAME: Joi.string().default('project'),
 });

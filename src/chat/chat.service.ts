@@ -25,10 +25,8 @@ export class ChatService {
       room_title: createRoomDto.room_title,
       created_by: user.profile_id,
     });
-
     const savedRoom = await room.save();
-    await this.joinRoom(savedRoom.room_id, user.profile_id);
-
+    await this.joinRoom(savedRoom.room_id, user.profile_id, user.user_name); // ← user_name 포함
     return savedRoom;
   }
 
@@ -44,17 +42,33 @@ export class ChatService {
     return room;
   }
 
+  // 방에 누가 있는지 조회
+  async getRoomParticipants(room_id: string) {
+    return this.participantModel
+      .find({ room_id })
+      .select('room_id profile_id user_name -_id')
+      .lean()
+      .exec();
+  }
+
+  // 최근 N개 메시지 조회(무한스크롤 대비 before 옵션)
+  async getRoomMessages(room_id: string, limit = 50, before?: Date) {
+    const q: any = { room_id };
+    if (before) q.chat_date = { $lt: before };
+    return this.messageModel.find(q).sort({ chat_date: -1 }).limit(limit).lean().exec();
+  }
+
   // 방 입장
-  async joinRoom(room_id: string, profile_id: string) {
-    // 방 유효성 검사
-    const room = await this.chatRoomModel.findOne({ room_id });
+  async joinRoom(room_id: string, profile_id: string, user_name: string) {
+    const room = await this.chatRoomModel.findOne({ room_id }).lean();
     if (!room) throw new NotFoundException('해당 방이 존재하지 않습니다.');
 
-    try {
-      await this.participantModel.create({ room_id, profile_id });
-    } catch (err) {
-      // 이미 참가 중이면 무시(유니크 인덱스 충돌)
+    const existing = await this.participantModel.findOne({ room_id, profile_id }).lean();
+    if (existing) {
+      return { message: '이미 해당 방에 참여 중입니다.' };
     }
+
+    await this.participantModel.create({ room_id, profile_id, user_name });
     return { message: '방 입장 완료' };
   }
 
@@ -65,10 +79,23 @@ export class ChatService {
     const remaining = await this.participantModel.countDocuments({ room_id });
     if (remaining === 0) {
       await this.chatRoomModel.deleteOne({ room_id });
-      await this.messageModel.deleteMany({ room_id }); // 메시지도 삭제
+      await this.messageModel.deleteMany({ room_id });
       return { message: '모든 유저가 나가 방이 삭제되었습니다.' };
     }
-
     return { message: '퇴장 완료' };
+  }
+
+  // 메시지 저장
+  async saveMessage(args: {
+    message_id: string;
+    profile_id: string;
+    user_name: string;
+    room_id: string;
+    chat_message: string;
+  }) {
+    return this.messageModel.create({
+      ...args,
+      chat_date: new Date(),
+    });
   }
 }
