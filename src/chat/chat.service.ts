@@ -51,11 +51,15 @@ export class ChatService {
       .exec();
   }
 
-  // 최근 50개 메시지만 조회(무한스크롤 대비 before 옵션)
-  async getRoomMessages(room_id: string, limit = 50, before?: Date) {
+  // 메시지 조회 -> limit가 undefined/null 이면 전체 조회
+  async getRoomMessages(room_id: string, limit?: number, before?: Date) {
     const q: any = { room_id };
     if (before) q.chat_date = { $lt: before };
-    return this.messageModel.find(q).sort({ chat_date: -1 }).limit(limit).lean().exec();
+
+    const query = this.messageModel.find(q).sort({ chat_date: -1 });
+    if (typeof limit === 'number') query.limit(limit);
+
+    return query.lean().exec();
   }
 
   // 방 입장
