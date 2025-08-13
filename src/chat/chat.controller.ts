@@ -31,6 +31,37 @@ export class ChatController {
     return this.chatService.getRoom(roomId);
   }
 
+  // message 보내기
+  @UseGuards(AuthGuard('jwt'))
+  @Post('message/:roomId')
+  sendMessageByHttp(
+    @Req() req: AuthRequest,
+    @Param('roomId') roomId: string,
+    @Body('chat_message') chat_message: string,
+  ) {
+    return this.chatService.saveMessage({
+      message_id: (Math.random() + 1).toString(36).slice(2),
+      profile_id: req.user.profile_id,
+      user_name: req.user.user_name,
+      room_id: roomId,
+      chat_message,
+    });
+  }
+
+  // 메시지 가져오기
+  @Get('room/:roomId/messages')
+  getRoomMessages(
+    @Param('roomId') roomId: string,
+    @Query('limit') limit = '50',
+    @Query('before') before?: string,
+  ) {
+    return this.chatService.getRoomMessages(
+      roomId,
+      Number(limit),
+      before ? new Date(before) : undefined,
+    );
+  }
+
   @Get('room/:roomId/participants')
   getRoomParticipants(@Param('roomId') roomId: string) {
     return this.chatService.getRoomParticipants(roomId);
