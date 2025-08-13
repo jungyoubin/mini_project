@@ -67,11 +67,14 @@ import { ChatModule } from './chat/chat.module';
           autoCreate: true,
           autoIndex: true,
           connectionFactory: (connection) => {
-            const logger = new Logger('Mongoose'); // 로깅 체크 하기
+            const logger = new Logger('Mongoose'); // 연결
             connection.on('connected', () =>
               logger.log(`Connected to ${connection.name} db="${connection.db.databaseName}"`),
-            ); // 어디에 연결된지 확인하기 -> 내 db명 project
-            connection.on('error', (e) => logger.error(e?.message || e));
+            ); // DB명
+            connection.on('error', (e: unknown) => {
+              const msg = e instanceof Error ? e.message : String(e);
+              logger.error(msg);
+            });
             connection.on('disconnected', () => logger.warn('Disconnected'));
             return connection;
           },

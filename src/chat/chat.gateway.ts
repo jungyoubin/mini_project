@@ -65,28 +65,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // 방 나가기 -> 마지막이면 방+메시지 삭제 + 소켓룸 나가기
   @SubscribeMessage('leaveRoom')
   async leaveRoom(@ConnectedSocket() client: Socket, @MessageBody() roomId: string) {
-  const user = (client as any).user as { profile_id?: string; sub?: string };
-  const profileId = user.profile_id ?? user.sub;
+    const user = (client as any).user as { profile_id?: string; sub?: string };
+    const profileId = user.profile_id ?? user.sub;
 
-  if (!roomId || typeof roomId !== 'string') {
-    client.emit('error', '유효하지 않은 roomId 입니다.');
-    return;
-  }
-
-  try {
-    // 소켓 룸 탈퇴(실시간 관리)
-    client.leave(roomId);
-    const set = this.roomParticipants.get(roomId);
-    if (set) {
-      set.delete(client.id);
-      if (set.size === 0) this.roomParticipants.delete(roomId);
+    if (!roomId || typeof roomId !== 'string') {
+      client.emit('error', '유효하지 않은 roomId 입니다.');
+      return;
     }
 
-    // DB 퇴장 처리 (마지막이면 방/메시지 삭제 -- cascade)
-    const result = await this.chatService.leaveRoom(roomId, profileId!);
+    try {
+      // 소켓 룸 탈퇴(실시간 관리)
+      client.leave(roomId);
+      const set = this.roomParticipants.get(roomId);
+      if (set) {
+        set.delete(client.id);
+        if (set.size === 0) this.roomParticipants.delete(roomId);
+      }
 
-  } catch (e: any) {
-    client.emit('error', e?.message ?? '방 나가기에 실패했습니다.');
+      // DB 퇴장 처리 (마지막이면 방/메시지 삭제 -- cascade)
+      const result = await this.chatService.leaveRoom(roomId, profileId!);
+    } catch (e: any) {
+      client.emit('error', e?.message ?? '방 나가기에 실패했습니다.');
+    }
   }
 
   // 메시지 전송: DB 저장 + 브로드캐스트 방식
