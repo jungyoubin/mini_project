@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RedisModule } from '@nestjs-modules/ioredis';
+import { RedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './user/auth/auth.module';
 import { User } from './user/user.entity';
 import configuration from './user/config/configuration';
+import validationSchema from './user/config/validation-schema';
 
 @Module({
   imports: [
@@ -38,13 +39,14 @@ import configuration from './user/config/configuration';
     RedisModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'single',
-        options: {
-          host: config.get('redis.host'),
-          port: config.get<number>('redis.port'),
-        },
-      }),
+      useFactory: (config: ConfigService): RedisModuleOptions => {
+        const host = config.get<string>('redis.host', 'localhost');
+        const port = config.get<number>('redis.port', 6379);
+        return {
+          type: 'single',
+          options: { host, port },
+        };
+      },
     }),
 
     UserModule,
