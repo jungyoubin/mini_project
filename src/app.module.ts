@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from '@nestjs-modules/ioredis';
@@ -54,10 +54,28 @@ import { ChatModule } from './chat/chat.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        uri: config.get<string>('mongo.uri')!,
-        dbName: config.get<string>('mongo.dbName')!,
-      }),
+      useFactory: async (config: ConfigService) => {
+        const uri = config.get<string>('mongo.uri');
+        const dbName = config.get<string>('mongo.dbName') || 'project';
+        if (!uri) throw new Error('mongo.uri is missing from config');
+
+        return {
+          uri,
+          dbName,
+          serverSelectionTimeoutMS: 8000,
+          autoCreate: true,
+          autoIndex: true,
+          connectionFactory: (connection) => {
+            const logger = new Logger('Mongoose'); // 로깅 체크 하기
+            connection.on('connected', () =>
+              logger.log(`Connected to ${connection.name} db="${connection.db.databaseName}"`),
+            ); // 어디에 연결된지 확인하기 -> 내 db명 project
+            connection.on('error', (e) => logger.error(e?.message || e));
+            connection.on('disconnected', () => logger.warn('Disconnected'));
+            return connection;
+          },
+        };
+      },
     }),
 
     ChatModule,
