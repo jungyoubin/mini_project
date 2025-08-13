@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import type { Request } from 'express';
@@ -22,6 +22,10 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     // 헤더에서 원본 토큰 가져옴(Redis 비교하기 위해서)
     const tokenExtractor = ExtractJwt.fromAuthHeaderAsBearerToken();
     const refreshToken = tokenExtractor(req) || '';
+
+    if (!payload?.sub) {
+      throw new UnauthorizedException('No refresh token');
+    }
 
     // req.user에 보내질 부분(controller에서 바로 사용함)
     return {

@@ -38,7 +38,7 @@ socket.on('connect', () => {
     }, 800);
   }
 
-  // 메시지 전송 => send: (option)
+  // 메시지 전송 => send:"" (option)
   if (SEND_TEXT) {
     setTimeout(() => {
       log('emit sendMessage', SEND_TEXT);
@@ -51,7 +51,7 @@ socket.on('connect', () => {
     setTimeout(() => {
       log('emit leaveRoom', ROOM_ID);
       socket.emit('leaveRoom', ROOM_ID);
-      setTimeout(() => process.exit(0), 300); // 약간의 대기 후 종료
+      setTimeout(() => process.exit(0), 300); // 약간의 대기 후 종료(0.3s)
     }, 1500);
   }
 });
@@ -86,10 +86,10 @@ process.on('SIGINT', () => {
   node test/test-socket.js http://localhost:3000 accessToken RoomId user_name (fetchAll)  
 각각 터미널에서 진행해야함
 ex.
-방 들어가기
+방 들어가기 -> 들어오면 자동으로 가져와짐
 node test/test-socket.js http://localhost:3000 accessToken roomId user_name (fetchAll)
 
 나가기
 Ctrl + C (터미널끄기)
-node test/test-socket.js http://localhost:3000 accessToken roomId user_name leave
+node test/test-socket.js http://localhost:3000 accessToken roomId (user_name) leave
 */

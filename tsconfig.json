@@ -18,7 +18,11 @@
     "skipLibCheck": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": false,
+<<<<<<< HEAD
     "noImplicitAny": false,
+=======
+    "noImplicitAny": true,
+>>>>>>> 5-redis-issue
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
   }

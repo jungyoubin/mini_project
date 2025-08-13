@@ -1,7 +1,7 @@
 import { Module, Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RedisModule } from '@nestjs-modules/ioredis';
+import { RedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './user/auth/auth.module';
 import { User } from './user/user.entity';
@@ -41,13 +41,14 @@ import { ChatModule } from './chat/chat.module';
     RedisModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'single',
-        options: {
-          host: config.get('redis.host'),
-          port: config.get<number>('redis.port'),
-        },
-      }),
+      useFactory: (config: ConfigService): RedisModuleOptions => {
+        const host = config.get<string>('redis.host', 'localhost');
+        const port = config.get<number>('redis.port', 6379);
+        return {
+          type: 'single',
+          options: { host, port },
+        };
+      },
     }),
 
     // mongob 연결
