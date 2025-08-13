@@ -12,7 +12,7 @@ export class WsJwtGuard extends (AuthGuard('jwt') as { new (): CanActivate }) {
     // auth.token 또는 header 에서 꺼냄 -> auth.token(header는 혹시 모르니까 두기)
     const raw =
       (client.handshake as any)?.auth?.token || client.handshake.headers?.authorization || '';
-    // bearere 없으면 앞에 붙이기
+    // bearer 없으면 앞에 붙이기
     const authorization =
       typeof raw === 'string' && !raw.toLowerCase().startsWith('bearer ') ? `Bearer ${raw}` : raw;
     return { headers: { authorization } } as any;

@@ -1,5 +1,3 @@
-// 메시지 저장되는 db
-
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
@@ -27,4 +25,5 @@ export class ChatMessage extends Document {
 
 export const ChatMessageSchema = SchemaFactory.createForClass(ChatMessage);
 
+// message는 전체 메시지를 관리
 ChatMessageSchema.index({ room_id: 1, chat_date: -1 }); // 조회 편하게 하기 위해서

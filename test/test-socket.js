@@ -80,7 +80,7 @@ process.on('SIGINT', () => {
 
 /* 
 실행법:
-  node test/test-socket.js <BASE_URL> <ACCESS_TOKEN> <ROOM_ID> <user_name> [send=<text>] [fetchAll]
+  node test/test-socket.js http://localhost:3000 <ACCESS_TOKEN> <ROOM_ID> <user_name> [send=<text>] [fetchAll]
 예시(문자 보낼때):
   node test/test-socket.js http://localhost:3000 accessToken RoomId user_name send="안녕 유빈!"
   node test/test-socket.js http://localhost:3000 accessToken RoomId user_name (fetchAll)  

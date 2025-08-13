@@ -17,5 +17,6 @@ export class ChatParticipant {
 
 export const ChatParticipantSchema = SchemaFactory.createForClass(ChatParticipant);
 
-// 같은 유저가 같은 방에 중복 입장 금지
+// chat에서는 어떤 방에 누가 있는지 관리
+// 같은 유저가 같은 방에 중복 입장 금지 -> 같은 room_id , 같은 profile_id 조합은 컬렉션이 하나만 존재
 ChatParticipantSchema.index({ room_id: 1, profile_id: 1 }, { unique: true });

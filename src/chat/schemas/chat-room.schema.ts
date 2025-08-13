@@ -17,4 +17,5 @@ export class ChatRoom {
   room_title: string;
 }
 
+// chatroom의 경우 무슨 방이 있는지 관리
 export const ChatRoomSchema = SchemaFactory.createForClass(ChatRoom);
