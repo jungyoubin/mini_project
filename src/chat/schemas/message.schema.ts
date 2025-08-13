@@ -12,7 +12,7 @@ export class ChatMessage extends Document {
   @Prop({ required: true })
   profile_id: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, index: true })
   room_id: string;
 
   @Prop({ required: true })

@@ -51,7 +51,7 @@ export class ChatService {
       .exec();
   }
 
-  // 최근 N개 메시지 조회(무한스크롤 대비 before 옵션)
+  // 최근 50개 메시지만 조회(무한스크롤 대비 before 옵션)
   async getRoomMessages(room_id: string, limit = 50, before?: Date) {
     const q: any = { room_id };
     if (before) q.chat_date = { $lt: before };
