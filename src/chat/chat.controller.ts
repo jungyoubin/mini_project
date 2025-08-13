@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Req, Get, Delete, Param, Query } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, Get, Param, Query } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -34,7 +34,7 @@ export class ChatController {
   @Get('room/:roomId/messages')
   getRoomMessages(
     @Param('roomId') roomId: string,
-    @Query('limit') limit = '50', // limit 50으로 설정(일단) -> undefined/ null 이면 다 가져옴
+    @Query('limit') limit = 'null',
     @Query('before') before?: string,
   ) {
     return this.chatService.getRoomMessages(

@@ -98,4 +98,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       chat_date: saved.chat_date,
     });
   }
+
+  @SubscribeMessage('fetchAllMessages') // socket 에서 테스트할때 사용(메시지 모두 가져오는 것)
+  async fetchAllMessages(@ConnectedSocket() client: Socket, @MessageBody() roomId: string) {
+    const all = await this.chatService.getRoomMessages(roomId, undefined);
+    client.emit('history', all.reverse());
+  }
 }
