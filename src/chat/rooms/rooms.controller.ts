@@ -11,7 +11,7 @@ export class RoomsController {
   @Post('room')
   async create(@Req() req: any, @Body() dto: CreateRoomDto) {
     const profileId: string | undefined = req.user?.sub;
-    if (!profileId) throw new BadRequestException('Invalid user payload');
+    if (!profileId) throw new BadRequestException('사용자 payload 문제 이슈');
     return this.rooms.createRoomByProfile(profileId, dto.room_title);
   }
 }

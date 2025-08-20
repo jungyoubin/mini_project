@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { randomUUID } from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 import { MongoClient } from 'mongodb';
 import type { Collection } from 'mongodb';
 import type { ChatRoomDocument } from '../schemas/chat-room.schema';
@@ -23,7 +23,6 @@ export class RoomsService implements OnModuleInit, OnModuleDestroy {
     const db = this.client.db(dbName);
     this.col = db.collection<ChatRoomDocument>('chat_rooms');
 
-    // room_id 유니크 인덱스 (이미 있으면 no-op)
     await this.col.createIndex({ room_id: 1 }, { unique: true });
   }
 
@@ -34,15 +33,10 @@ export class RoomsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  /**
-   * 액세스 토큰의 profile_id로 방 생성.
-   * - room_id: uuidv4 (서비스에서 생성)
-   * - room_date: Date 객체로 저장 (응답은 ISO 문자열로 반환)
-   * - participants: [{ profile_id }]
-   */
+  // 액세스 토큰의 profile_id로 방 생성.
   async createRoomByProfile(profileId: string, roomTitle: string) {
     const room: ChatRoomDocument = {
-      room_id: randomUUID(),
+      room_id: uuidv4(),
       room_title: roomTitle,
       room_date: new Date(),
       participants: [{ profile_id: profileId }],
