@@ -1,40 +1,31 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { ChatRoom, ChatRoomSchema } from './schemas/chat-room.schema';
-import { ChatMessage, ChatMessageSchema } from './schemas/message.schema';
-import { ChatParticipant, ChatParticipantSchema } from './schemas/chat-participant.schema';
 import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
-import { ChatController } from './chat.controller';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WsJwtGuard } from './guards/ws-jwt.guard';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { RedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis';
 
 @Module({
   imports: [
-    // 채팅방 DB(chat_room_db)로 방 + 참여자 연결
-    MongooseModule.forFeature([
-      { name: ChatRoom.name, schema: ChatRoomSchema },
-      { name: ChatParticipant.name, schema: ChatParticipantSchema },
-      { name: ChatMessage.name, schema: ChatMessageSchema },
-    ]),
-
-    // 메시지용 DB(chat_message_db) 연결
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      connectionName: 'messageConnection',
+    ConfigModule,
+    JwtModule.register({}),
+    RedisModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        uri: config.get<string>('mongo.uri'),
-        dbName: config.get<string>('mongo.messageDbName'),
-      }),
+      useFactory: (config: ConfigService): RedisModuleOptions => {
+        const host = config.get<string>('redis.host', 'localhost');
+        const port = config.get<number>('redis.port', 6379);
+        return {
+          type: 'single',
+          options: {
+            host,
+            port,
+          },
+        };
+      },
     }),
-    MongooseModule.forFeature(
-      [{ name: ChatMessage.name, schema: ChatMessageSchema }],
-      'messageConnection',
-    ),
   ],
-  controllers: [ChatController],
-  providers: [ChatService, ChatGateway, WsJwtGuard],
-  exports: [ChatService],
+  providers: [ChatGateway, ChatService, WsJwtGuard],
+  exports: [ChatGateway, ChatService],
 })
 export class ChatModule {}

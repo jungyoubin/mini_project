@@ -55,7 +55,7 @@ import { ChatModule } from './chat/chat.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (config: ConfigService) => {
+      useFactory: (config: ConfigService) => {
         const uri = config.get<string>('mongo.uri');
         const dbName = config.get<string>('mongo.dbName') || 'project';
         if (!uri) throw new Error('mongo.uri is missing from config');
