@@ -33,6 +33,11 @@ export class RoomsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  // room_id를 통하여서 방 조회하기(있는지 없는지)
+  async findRoomById(roomId: string): Promise<ChatRoomDocument | null> {
+    return this.col.findOne({ room_id: roomId });
+  }
+
   // 액세스 토큰의 profile_id로 방 생성.
   async createRoomByProfile(profileId: string, roomTitle: string) {
     const room: ChatRoomDocument = {

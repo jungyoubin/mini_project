@@ -61,7 +61,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     this.logger.log(`connected: profile=${profileId}, socket=${client.id}`);
-    client.emit('socket/registered', { socketId: client.id }); // 발급하면 알림(테스트)
+    client.emit('socket/registered', { socketId: client.id }); // 발급하면 알림(테스트 error)
   }
 
   async handleDisconnect(client: Socket) {
@@ -78,5 +78,43 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async emitToProfile(profileId: string, event: string, payload: any) {
     const sid = await this.chatService.getSocketIdByProfile(profileId);
     if (sid) this.server.to(sid).emit(event, payload);
+  }
+
+  // socket room join
+  async joinProfileToRoom(profileId: string, roomId: string) {
+    const sid = await this.chatService.getSocketIdByProfile(profileId);
+    if (!sid) {
+      return { joined: false as const, reason: 'offline' as const };
+    }
+
+    // 해당 소켓 대상으로 room join 하기
+    await this.server.in(sid).socketsJoin(roomId);
+
+    // 알림(추후 error 테스트)
+    this.server.to(sid).emit('room/joined', { room_id: roomId });
+
+    return { joined: true as const, socketId: sid };
+  }
+
+  // socket room 에 대한 멤버 조회 -> socketId, profile_id 반환
+  async getRoomMembers(roomId: string) {
+    const sockets = await this.server.in(roomId).fetchSockets();
+    const members = await Promise.all(
+      sockets.map(async (s) => ({
+        socket_id: s.id,
+        // ChatService에 getProfileIdBySocketId가 있어야 함
+        profile_id: await this.chatService.getProfileIdBySocketId(s.id),
+      })),
+    );
+    return { room_id: roomId, count: members.length, members };
+  }
+
+  // 내가 방에 있는지에 대한 여부
+  async isProfileInRoom(profileId: string, roomId: string) {
+    const sid = await this.chatService.getSocketIdByProfile(profileId);
+    if (!sid) return { room_id: roomId, in_room: false, reason: 'offline' as const };
+    const sockets = await this.server.in(roomId).fetchSockets();
+    const inRoom = sockets.some((s) => s.id === sid);
+    return { room_id: roomId, in_room: inRoom };
   }
 }

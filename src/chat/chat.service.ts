@@ -72,4 +72,9 @@ export class ChatService {
   async getSocketIdByProfile(profileId: string): Promise<string | null> {
     return this.redis.get(this.kProfile(profileId));
   }
+
+  // socketId로 porfileId 조회하기
+  async getProfileIdBySocketId(socketId: string): Promise<string | null> {
+    return this.redis.get(this.kOwner(socketId));
+  }
 }
