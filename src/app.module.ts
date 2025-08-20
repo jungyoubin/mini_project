@@ -9,6 +9,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import configuration from './config/configuration';
 import validationSchema from './config/validation-schema';
 import { ChatModule } from './chat/chat.module';
+import { RoomsModule } from './chat/rooms/rooms.module';
 
 @Module({
   imports: [
@@ -85,6 +86,7 @@ import { ChatModule } from './chat/chat.module';
     ChatModule,
     UserModule,
     AuthModule,
+    RoomsModule,
   ],
 })
 export class AppModule {}

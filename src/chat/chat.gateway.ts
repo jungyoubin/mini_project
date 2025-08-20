@@ -1,4 +1,3 @@
-// src/chat/chat.gateway.ts
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -17,7 +16,7 @@ import { ChatService } from './chat.service';
 import { wsHandshakeAuth } from './guards/ws-handshake-auth';
 
 @WebSocketGateway({
-  namespace: 'chat', // /chat 로 접속 -> postman에서
+  namespace: 'chat', // /chat 로 접속 -> postman에서 localhost:3000/chat
   cors: { origin: true },
   path: '/socket.io',
 })
