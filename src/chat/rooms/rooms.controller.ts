@@ -79,4 +79,24 @@ export class RoomsController {
     const decoded = decodeURIComponent(roomId);
     return this.gateway.isProfileInRoom(profileId, decoded);
   }
+
+  // 전체 방
+  @UseGuards(HttpJwtGuard)
+  @Get('rooms')
+  async listAll(@Req() req: any) {
+    const profileId: string | undefined = req.user?.sub;
+    if (!profileId) throw new BadRequestException('Invalid user payload');
+
+    return this.roomsService.listRooms(profileId);
+  }
+
+  // 내가 속한 방만
+  @UseGuards(HttpJwtGuard)
+  @Get('my-rooms')
+  async listMine(@Req() req: any) {
+    const profileId: string | undefined = req.user?.sub;
+    if (!profileId) throw new BadRequestException('Invalid user payload');
+
+    return this.roomsService.listMyRooms(profileId);
+  }
 }

@@ -99,4 +99,139 @@ export class RoomsService implements OnModuleInit, OnModuleDestroy {
     }
     return ids;
   }
+
+  // 전체 채팅방 목록 조회
+  async listRooms(profileId: string): Promise<
+    Array<{
+      room_id: string;
+      room_title: string;
+      participants: { profile_id: string }[];
+      participant_count: number;
+      enter_status: boolean; // 들어갔으면 true, 아니면 false
+      room_date: string; // ISO8601
+    }>
+  > {
+    const pipeline = [
+      // participants에서 profile_id만 뽑아 배열로 만들기 -> 내가 들어간지 확인하기 위해
+      {
+        $addFields: {
+          _participantIds: {
+            $map: { input: '$participants', as: 'p', in: '$$p.profile_id' },
+          },
+        },
+      },
+      // participant_count / enter_status 계산
+      {
+        $addFields: {
+          participant_count: { $size: '$_participantIds' },
+          enter_status: { $in: [profileId, '$_participantIds'] },
+        },
+      },
+      // 사용할 부분만 1로 하기
+      {
+        $project: {
+          _id: 0,
+          room_id: 1,
+          room_title: 1,
+          participants: 1,
+          participant_count: 1,
+          enter_status: 1,
+          room_date: 1,
+        },
+      },
+      { $sort: { room_date: -1 } }, // 최신순으로 하기(일단은 최신순으로 하자)
+    ];
+
+    const cursor = this.col.aggregate<{
+      room_id: string;
+      room_title: string;
+      participants: { profile_id: string }[];
+      participant_count: number;
+      enter_status: boolean;
+      room_date: Date;
+    }>(pipeline);
+
+    const out: Array<{
+      room_id: string;
+      room_title: string;
+      participants: { profile_id: string }[];
+      participant_count: number;
+      enter_status: boolean;
+      room_date: string;
+    }> = [];
+
+    for await (const doc of cursor) {
+      out.push({
+        room_id: doc.room_id,
+        room_title: doc.room_title,
+        participants: doc.participants ?? [],
+        participant_count: doc.participant_count ?? doc.participants?.length ?? 0,
+        enter_status: !!doc.enter_status,
+        room_date: doc.room_date.toISOString(),
+      });
+    }
+
+    return out;
+  }
+
+  // 내가 속한 방만(전체 x) 보여주기
+  async listMyRooms(profileId: string): Promise<
+    Array<{
+      room_id: string;
+      room_title: string;
+      participants: { profile_id: string }[];
+      participant_count: number;
+      room_date: string; // ISO8601
+    }>
+  > {
+    const pipeline = [
+      // 내가 멤버인 방만 필터
+      { $match: { 'participants.profile_id': profileId } },
+      // participants 길이 계산
+      {
+        $addFields: {
+          participant_count: { $size: '$participants' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          room_id: 1,
+          room_title: 1,
+          participants: 1,
+          participant_count: 1,
+          room_date: 1,
+        },
+      },
+      { $sort: { room_date: -1 } },
+    ];
+
+    const cursor = this.col.aggregate<{
+      room_id: string;
+      room_title: string;
+      participants: { profile_id: string }[];
+      participant_count: number;
+      room_date: Date;
+    }>(pipeline);
+
+    const out: Array<{
+      room_id: string;
+      room_title: string;
+      participants: { profile_id: string }[];
+      participant_count: number;
+      room_date: string;
+    }> = [];
+
+    for await (const doc of cursor) {
+      out.push({
+        room_id: doc.room_id,
+        room_title: doc.room_title,
+        participants: doc.participants ?? [],
+        participant_count: doc.participant_count ?? doc.participants?.length ?? 0,
+        room_date: doc.room_date.toISOString(),
+      });
+    }
+
+    return out;
+  }
 }
