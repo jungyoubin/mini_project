@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
 import { WsJwtGuard } from './guards/ws-jwt.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis';
+import { RoomsModule } from './rooms/rooms.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { RedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis';
         };
       },
     }),
+    forwardRef(() => RoomsModule),
   ],
   providers: [ChatGateway, ChatService, WsJwtGuard],
   exports: [ChatGateway, ChatService],

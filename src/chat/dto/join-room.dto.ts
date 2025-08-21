@@ -7,5 +7,6 @@ export class JoinRoomDto {
 }
 
 /*
+API -> Socket
 socket join 요청
 */

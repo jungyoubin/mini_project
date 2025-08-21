@@ -19,7 +19,8 @@ import { ChatGateway } from '../chat.gateway';
 export class RoomsController {
   constructor(
     private readonly rooms: RoomsService,
-    private readonly gateway: ChatGateway,
+    private readonly gateway: ChatGateway, // socket
+    private readonly roomsService: RoomsService,
   ) {}
 
   @UseGuards(HttpJwtGuard)
@@ -30,7 +31,8 @@ export class RoomsController {
     return this.rooms.createRoomByProfile(profileId, dto.room_title);
   }
 
-  // socket 으로 API -> Socket join
+  // socket Id 저장/조회 없이 해당 방으로 들어가기
+  // user:{profileId} 타깃으로 join
   @UseGuards(HttpJwtGuard)
   @Post('room/join')
   async join(@Req() req: any, @Body() dto: JoinRoomDto) {
@@ -47,22 +49,34 @@ export class RoomsController {
     return {
       room_id: dto.room_id,
       joined: result.joined,
-      reason: result.joined ? undefined : result.reason,
     };
   }
 
   // Socket Room 멤버 목록 조회 (확인용)
   @UseGuards(HttpJwtGuard)
   @Get('room/:roomId/members')
-  async members(@Param('roomId') roomId: string) {
-    return this.gateway.getRoomMembers(roomId);
+  async getMembers(@Param('roomId') roomId: string) {
+    const decodedRoomId = decodeURIComponent(roomId); // URI 디코딩
+    const members = await this.roomsService.getMembers(decodedRoomId);
+    return {
+      room_id: decodedRoomId,
+      count: members.length,
+      members,
+    };
   }
 
-  // 내 소켓이 그 방에 들어가 있는지 확인
+  /*
+  내 소켓이 그 방에 들어가 있는지 확인(확인용)
+  GET /chat/room/user:{roomId}/me
+  Authorization: Bearer {AccessToken}
+  */
   @UseGuards(HttpJwtGuard)
   @Get('room/:roomId/me')
   async amIIn(@Req() req: any, @Param('roomId') roomId: string) {
     const profileId: string | undefined = req.user?.sub;
-    return this.gateway.isProfileInRoom(profileId!, roomId);
+    if (!profileId) throw new BadRequestException('Invalid user payload');
+
+    const decoded = decodeURIComponent(roomId);
+    return this.gateway.isProfileInRoom(profileId, decoded);
   }
 }
