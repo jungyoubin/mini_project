@@ -1,6 +1,6 @@
 export class JwtPayloadDto {
-  // profile_id: string;
-  // user_name: string;
   sub: string; // sub = profile_id
-  access_token: string;
+  user_name?: string;
+  iat?: number; // 발급 시간
+  exp?: number; // 만료 시간
 }

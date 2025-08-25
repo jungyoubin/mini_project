@@ -7,6 +7,7 @@ export class WsJwtGuard implements CanActivate {
     const client = context.switchToWs().getClient<Socket>();
     const user = client.data?.user as { sub?: string; exp?: number } | undefined;
 
+    // 미들웨어가 넣어준 payload가 없다 -> 인증 실패
     if (!user?.sub) {
       throw new UnauthorizedException('No authenti~~ (no user on socket)');
     }
@@ -14,13 +15,6 @@ export class WsJwtGuard implements CanActivate {
     const authHeader = client.handshake?.headers?.authorization;
     if (!authHeader) throw new UnauthorizedException('Authorization header가 없다');
 
-    // 만료 확인
-    if (user.exp && Math.floor(Date.now() / 1000) >= user.exp) {
-      try {
-        client.disconnect(true);
-      } catch {}
-      throw new UnauthorizedException('Token expired');
-    }
     return true;
   }
 }

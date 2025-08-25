@@ -9,7 +9,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import configuration from './config/configuration';
 import validationSchema from './config/validation-schema';
 import { ChatModule } from './chat/chat.module';
-import { RoomsModule } from './chat/rooms/rooms.module';
 
 @Module({
   imports: [
@@ -83,10 +82,9 @@ import { RoomsModule } from './chat/rooms/rooms.module';
       },
     }),
 
-    ChatModule,
-    UserModule,
-    AuthModule,
-    RoomsModule,
+    ChatModule, // ChatModule을 imports
+    UserModule, // UserModule을 imports
+    AuthModule, // AuthModule을 imports
   ],
 })
 export class AppModule {}

@@ -1,15 +1,9 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { JwtPayloadDto } from 'src/user/auth/jwt-dto';
 
 // Access Token 검증 하는 Guard
-
-type AccessTokenClaims = {
-  sub: string;
-  iat?: number; // 발급 시각
-  exp?: number; // 만료 시각
-};
-
 @Injectable()
 export class HttpJwtGuard implements CanActivate {
   constructor(
@@ -43,7 +37,7 @@ export class HttpJwtGuard implements CanActivate {
 
     try {
       // 서명
-      const payload = this.jwt.verify<AccessTokenClaims>(token, {
+      const payload = this.jwt.verify<JwtPayloadDto>(token, {
         secret: this.config.get<string>('jwt.secret'),
       });
 
