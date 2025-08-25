@@ -43,13 +43,14 @@ export class BoardService {
     const board = await this.boardModel.findOne({ board_id }).exec();
     if (!board) throw new NotFoundException('게시글을 찾을 수 없습니다.');
 
-    const before = board.board_liked_people.length;
-    board.board_liked_people = board.board_liked_people.filter((p) => p.profile_id !== profile_id);
-
-    if (board.board_liked_people.length === before) {
+    // 했는지 여부 확인
+    const exists = board.board_liked_people.some((p) => p.profile_id === profile_id);
+    if (!exists) {
       throw new BadRequestException('아직 좋아요하지 않은 게시글입니다.');
     }
 
+    // 있으면 빼기
+    board.board_liked_people = board.board_liked_people.filter((p) => p.profile_id !== profile_id);
     board.board_liked_count = board.board_liked_people.length;
     await board.save();
 
