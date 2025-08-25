@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards, Delete, Param } from '@nestjs/common';
 import { BoardService } from './board.service';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { HttpJwtGuard } from '../guards/jwt.guard';
@@ -13,5 +13,13 @@ export class BoardController {
   async create(@Req() req: any, @Body() dto: CreateBoardDto) {
     const writerProfileId: string = req.user?.sub ?? req.user?.profile_id ?? req.user;
     return this.boardService.create(dto, writerProfileId);
+  }
+
+  // 게시판 삭제 -> 작성자만 가능하게
+  @UseGuards(HttpJwtGuard)
+  @Delete(':board_id')
+  async remove(@Param('board_id') board_id: string, @Req() req: any) {
+    const writerProfileId: string = req.user?.sub ?? req.user?.profile_id ?? req.user;
+    return this.boardService.remove(board_id, writerProfileId);
   }
 }
