@@ -2,7 +2,7 @@ import { Injectable, HttpException, HttpStatus, UnauthorizedException } from '@n
 import { CreateUserDto, LoginUserDto } from 'src/user/user.dto';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
-import { UserService } from '../user.service';
+import { UserService } from '../../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'crypto';

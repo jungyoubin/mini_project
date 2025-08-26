@@ -3,10 +3,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis';
 import { UserModule } from './user/user.module';
-import { AuthModule } from './user/auth/auth.module';
+import { AuthModule } from './common/auth/auth.module';
 import { User } from './user/user.entity';
-import configuration from './user/config/configuration';
-import validationSchema from './user/config/validation-schema';
+import configuration from './config/configuration';
+import validationSchema from './config/validation-schema';
 
 @Module({
   imports: [
