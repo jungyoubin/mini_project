@@ -31,16 +31,19 @@ export class Board {
   /*
   서비스 : 추가 / 삭제 
   const key = `board_liked_people.${profileId}`;
+
   추가
   await this.boardModel.updateOne(
     { board_id },
     { $set: { [key]: true } }  // board_liked_people[profileId] = true
   );
+
   삭제
   await this.boardModel.updateOne(
     { board_id },
     { $unset: { [key]: truer } }   // board_liked_people[profileId] 삭제
   );
+
   */
 
   /* 

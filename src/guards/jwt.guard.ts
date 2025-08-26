@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtPayloadDto } from 'src/user/auth/jwt-dto';
+import { Request } from 'express';
 
 // Access Token 검증 하는 Guard
 @Injectable()
@@ -41,7 +42,7 @@ export class HttpJwtGuard implements CanActivate {
         secret: this.config.get<string>('jwt.secret'),
       });
 
-      req.user = payload; // 이후 컨트롤러에서 req.user.sub 사용
+      req.user = payload; // 이후 컨트롤러에서 req.user.sub 사용, 데코레이터가 해당 값을 읽음
       return true;
     } catch {
       throw new UnauthorizedException('Invalid or expired access token');
