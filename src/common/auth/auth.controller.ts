@@ -1,5 +1,4 @@
-import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { CreateUserDto, LoginUserDto } from 'src/user/user.dto';
+import { Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
@@ -10,18 +9,6 @@ export class AuthController {
   constructor(
     private authService: AuthService, // AuthService를 주입받음
   ) {}
-
-  @Post('register') // register 주소로 Post로 온 요청 처리
-  // class-validator가 자동으로 유효성 검증
-  async register(@Body() userDto: CreateUserDto) {
-    return await this.authService.register(userDto);
-    // authService를 사용해 user 정보 저장
-  }
-
-  @Post('login') // 로그인
-  async login(@Body() loginDto: LoginUserDto) {
-    return await this.authService.login(loginDto);
-  }
 
   @UseGuards(AuthGuard('jwt'))
   @Post('logout')

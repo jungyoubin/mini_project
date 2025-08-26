@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { JwtPayloadDto } from '../auth/jwt-dto';
+import { JwtPayloadDto } from '../payload/jwt-dto';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -14,7 +14,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JwtPayloadDto) {
-    return { profile_id: payload.sub };
+  validate(payload: JwtPayloadDto): JwtPayloadDto {
+    // req.user 에 JWT payload 그대로 넣어줌 → user.sub 사용 유지
+    return payload;
   }
 }

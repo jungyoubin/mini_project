@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Get, Param, Patch, Delete } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto, UpdateUserDto } from './user.dto';
+import { CreateUserDto, UpdateUserDto, LoginUserDto } from './dto/user.dto';
 
 @Controller('user')
 export class UserController {
@@ -9,7 +9,13 @@ export class UserController {
   // 회원 등록
   @Post('register')
   async register(@Body() body: CreateUserDto) {
-    return this.userService.createUser(body);
+    return this.userService.register(body);
+  }
+
+  // 로그인
+  @Post('login')
+  async login(@Body() loginDto: LoginUserDto) {
+    return this.userService.login(loginDto); // ★ 변경
   }
 
   // 전체 유저 조회
@@ -28,11 +34,5 @@ export class UserController {
   @Patch(':profile_id')
   async update(@Param('profile_id') profile_id: string, @Body() body: UpdateUserDto) {
     return this.userService.updateUser(profile_id, body);
-  }
-
-  // 유저 삭제
-  @Delete(':profile_id')
-  async delete(@Param('profile_id') profile_id: string) {
-    return this.userService.deleteUser(profile_id);
   }
 }
