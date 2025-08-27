@@ -31,6 +31,7 @@ export class Board {
   /*
   서비스 : 추가 / 삭제 
   const key = `board_liked_people.${profileId}`;
+
   추가
   await this.boardModel.updateOne(
     { board_id },
