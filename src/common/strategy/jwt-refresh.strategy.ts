@@ -6,7 +6,6 @@ import { ConfigService } from '@nestjs/config';
 
 type RefreshPayload = {
   sub: string; // profile_id
-  user_name?: string;
 };
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
@@ -30,7 +29,6 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     // req.user에 보내질 부분(controller에서 바로 사용함)
     return {
       profile_id: payload.sub,
-      user_name: payload.user_name,
       refreshToken, // 원본 문자열
     };
   }
