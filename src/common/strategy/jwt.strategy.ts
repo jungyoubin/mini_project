@@ -5,16 +5,16 @@ import { JwtPayloadDto } from '../payload/jwt-dto';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly configService: ConfigService) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+  constructor(private readonly config: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // 헤더에서 accesstoken 추출
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // Authorization: Bearer <token>
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('jwt.secret') || 'default_secret',
+      secretOrKey: config.get<string>('jwt.secret') || 'default_secret',
     });
   }
 
-  validate(payload: JwtPayloadDto): JwtPayloadDto {
+  async validate(payload: JwtPayloadDto): Promise<JwtPayloadDto> {
     // req.user 에 JWT payload 그대로 넣어줌 → user.sub 사용 유지
     return payload;
   }

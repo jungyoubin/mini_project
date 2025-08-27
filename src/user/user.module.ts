@@ -6,6 +6,7 @@ import { UserController } from './user.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthModule } from 'src/common/auth/auth.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       }),
     }),
     RedisModule,
+    AuthModule,
   ],
   controllers: [UserController],
   providers: [UserService],

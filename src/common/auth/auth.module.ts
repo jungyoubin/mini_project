@@ -10,6 +10,7 @@ import { RedisModule } from '@nestjs-modules/ioredis';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from '../strategy/jwt.strategy';
 import { JwtRefreshStrategy } from '../strategy/jwt-refresh.strategy';
+import { JwtAuthGuard } from '../guards/jwt.guard';
 
 @Module({
   imports: [
@@ -38,7 +39,7 @@ import { JwtRefreshStrategy } from '../strategy/jwt-refresh.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserService, JwtStrategy, JwtRefreshStrategy],
-  exports: [JwtModule],
+  providers: [AuthService, UserService, JwtStrategy, JwtRefreshStrategy, JwtAuthGuard],
+  exports: [JwtModule, JwtAuthGuard],
 })
 export class AuthModule {}
