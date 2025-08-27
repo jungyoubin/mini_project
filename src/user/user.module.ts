@@ -22,7 +22,6 @@ import { JwtAuthGuard } from 'src/common/guards/jwt.guard';
       }),
     }),
     RedisModule,
-    JwtAuthGuard,
     AuthModule,
   ],
   controllers: [UserController],

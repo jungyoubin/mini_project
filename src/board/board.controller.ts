@@ -18,7 +18,7 @@ export class BoardController {
   }
 
   // 전체 조회
-  @UseGuards(HttpJwtGuard)
+  @UseGuards(JwtAuthGuard)
   @Get()
   async findAll() {
     const boards = await this.boardService.findAll();
@@ -26,7 +26,7 @@ export class BoardController {
   }
 
   // 개별 조회
-  @UseGuards(HttpJwtGuard)
+  @UseGuards(JwtAuthGuard)
   @Get(':board_id')
   async findOne(@Param('board_id') board_id: string) {
     return this.boardService.findOne(board_id);
