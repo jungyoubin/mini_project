@@ -20,12 +20,6 @@ export class AuthService {
     return createHash('sha256').update(s).digest('hex');
   }
 
-  // 로그아웃시 삭제
-  async logout(profile_id: string) {
-    await this.redis.del(`rt:${profile_id}`);
-    return { message: '로그아웃 완료' };
-  }
-
   // 유저별 키의 해시와 비교하기
   async reissueAccessToken(
     refreshToken: string,
