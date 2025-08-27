@@ -37,11 +37,13 @@ export class Board {
     { board_id },
     { $set: { [key]: true } }  // board_liked_people[profileId] = true
   );
+
   삭제
   await this.boardModel.updateOne(
     { board_id },
     { $unset: { [key]: truer } }   // board_liked_people[profileId] 삭제
   );
+
   */
 
   /* 
