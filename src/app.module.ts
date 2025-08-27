@@ -5,10 +5,12 @@ import { RedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './common/auth/auth.module';
 import { User } from './user/user.entity';
+import { MongooseModule } from '@nestjs/mongoose';
 import configuration from './config/configuration';
 import validationSchema from './config/validation-schema';
-import { MongooseModule } from '@nestjs/mongoose';
+// import { ChatModule } from './chat/chat.module';
 import { BoardModule } from './board/board.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({

@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from 'src/common/auth/auth.module';
+import { JwtAuthGuard } from 'src/common/guards/jwt.guard';
 
 @Module({
   imports: [
@@ -21,10 +22,11 @@ import { AuthModule } from 'src/common/auth/auth.module';
       }),
     }),
     RedisModule,
+    JwtAuthGuard,
     AuthModule,
   ],
   controllers: [UserController],
-  providers: [UserService],
+  providers: [UserService, JwtAuthGuard],
   exports: [UserService],
 })
 export class UserModule {}
