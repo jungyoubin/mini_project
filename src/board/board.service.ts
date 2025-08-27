@@ -10,8 +10,8 @@ export class BoardService {
 
   async create(dto: CreateBoardDto, writerProfileId: string) {
     return this.boardModel.create({
-      board_title: dto.board_title,
-      board_content: dto.board_content,
+      board_title: dto.boardTitle,
+      board_content: dto.boardContent,
       board_writer: writerProfileId,
     });
   }

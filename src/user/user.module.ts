@@ -1,14 +1,32 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './auth/auth.module';
 import { User } from './user.entity';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
+import { JwtModule } from '@nestjs/jwt';
+import { RedisModule } from '@nestjs-modules/ioredis';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthModule } from 'src/common/auth/auth.module';
+import { JwtAuthGuard } from 'src/common/guards/jwt.guard';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), AuthModule],
+  imports: [
+    TypeOrmModule.forFeature([User]),
+    ConfigModule, // 전역이면 생략 가능
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (cfg: ConfigService) => ({
+        secret: cfg.get<string>('jwt.secret'),
+        signOptions: { expiresIn: '15m' },
+      }),
+    }),
+    RedisModule,
+    JwtAuthGuard,
+    AuthModule,
+  ],
   controllers: [UserController],
-  providers: [UserService],
+  providers: [UserService, JwtAuthGuard],
   exports: [UserService],
 })
 export class UserModule {}

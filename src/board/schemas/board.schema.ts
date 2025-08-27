@@ -24,11 +24,33 @@ export class Board {
   @Prop({ type: String, required: true }) // 작성자의 profile_id
   board_writer: string;
 
-  @Prop({ type: [{ profile_id: { type: String, required: true } }], default: [] })
-  board_liked_people: { profile_id: string }[];
+  // key = profile_id, value = true
+  @Prop({ type: Map, of: Boolean, default: {} })
+  board_liked_people: Map<string, boolean>;
 
-  @Prop({ type: Number, default: 0 })
-  board_liked_count: number;
+  /*
+  서비스 : 추가 / 삭제 
+  const key = `board_liked_people.${profileId}`;
+
+  추가
+  await this.boardModel.updateOne(
+    { board_id },
+    { $set: { [key]: true } }  // board_liked_people[profileId] = true
+  );
+
+  삭제
+  await this.boardModel.updateOne(
+    { board_id },
+    { $unset: { [key]: truer } }   // board_liked_people[profileId] 삭제
+  );
+
+  */
+
+  /* 
+  좋아요 갯수에 대해서는 따로 저장하지 않고 필요할 때,
+  다음과 같은 $size를 통하여서 집계하여서 사용하려고 합니다.
+  board_liked_count: { $size: "$board_liked_people" }
+  */
 }
 
 export const BoardSchema = SchemaFactory.createForClass(Board);
