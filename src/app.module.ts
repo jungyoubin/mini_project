@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule, RedisModuleOptions } from '@nestjs-modules/ioredis';
 import { UserModule } from './user/user.module';
-import { AuthModule } from './user/auth/auth.module';
+import { AuthModule } from './common/auth/auth.module';
 import { User } from './user/user.entity';
 import { MongooseModule } from '@nestjs/mongoose';
 import configuration from './config/configuration';
