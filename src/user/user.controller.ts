@@ -2,6 +2,9 @@ import { Controller, Post, Body, Get, Param, Patch, UseGuards } from '@nestjs/co
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto, LoginUserDto } from './dto/user.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt.guard';
+import { ReqUser } from '../common/decorators/user.decorator';
+import type { JwtPayloadDto } from 'src/common/payload/jwt-dto';
+
 
 @Controller('user')
 export class UserController {
@@ -17,6 +20,13 @@ export class UserController {
   @Post('login')
   async login(@Body() loginDto: LoginUserDto) {
     return this.userService.login(loginDto); // ★ 변경
+  }
+
+  // 로그아웃
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  async logoutRUser(@ReqUser() user: JwtPayloadDto) {
+    return this.userService.logout(user.sub);
   }
 
   // 전체 유저 조회

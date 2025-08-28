@@ -13,8 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       secretOrKey: config.get<string>('jwt.secret') || 'default_secret',
     });
   }
-
-  async validate(payload: JwtPayloadDto): Promise<JwtPayloadDto> {
+  validate(payload: JwtPayloadDto): JwtPayloadDto {
     // req.user 에 JWT payload 그대로 넣어줌 → user.sub 사용 유지
     return payload;
   }
