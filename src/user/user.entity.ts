@@ -10,7 +10,7 @@ export class User {
   @Column({ type: 'varchar', length: 20, nullable: false })
   user_id: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false, select: false }) // 선택에서 제외
+  @Column({ type: 'varchar', length: 255, nullable: false })
   user_pw: string;
 
   @Column({ type: 'varchar', length: 20, nullable: false })
