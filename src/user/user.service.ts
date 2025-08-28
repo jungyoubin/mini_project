@@ -84,6 +84,13 @@ export class UserService {
       accessToken,
       refreshToken,
     };
+
+  }
+
+  // 로그아웃시 삭제
+  async logout(profileId: string) {
+    await this.redis.del(`rt:${profileId}`);
+    return { message: '로그아웃 완료' };
   }
 
   async findByUserId(user_id: string) {
