@@ -19,12 +19,27 @@ export class BoardController {
   }
 
 
+  // 좋아요 하기
+  @UseGuards(JwtAuthGuard)
+  @Post(':board_id/like')
+  async like(@Param('board_id') board_id: string, @ReqUser() user: JwtPayloadDto) {
+    return this.boardService.like(board_id, user.sub);
+  }
+
+  // 좋아요 취소
+  @UseGuards(JwtAuthGuard)
+  @Delete(':board_id/like')
+  async unlike(@Param('board_id') board_id: string, @ReqUser() user: JwtPayloadDto) {
+    return this.boardService.unlike(board_id, user.sub);
+  }
+
   // 게시판 삭제 -> 작성자만 가능하게
   @UseGuards(JwtAuthGuard)
   @Delete(':board_id')
   async remove(@Param('board_id') board_id: string, @Req() req: any) {
     const writerProfileId: string = req.user?.sub ?? req.user?.profile_id ?? req.user;
     return this.boardService.remove(board_id, writerProfileId);
+  }
 
   // 전체 조회
   @UseGuards(JwtAuthGuard)
@@ -40,6 +55,7 @@ export class BoardController {
   async findOne(@Param('board_id') board_id: string) {
     return this.boardService.findOne(board_id);
   }
+  
   // 수정
   @UseGuards(JwtAuthGuard)
   @Patch(':board_id')

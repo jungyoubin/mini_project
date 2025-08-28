@@ -5,6 +5,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt.guard';
 import { ReqUser } from '../common/decorators/user.decorator';
 import type { JwtPayloadDto } from 'src/common/payload/jwt-dto';
 
+
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -19,7 +20,6 @@ export class UserController {
   @Post('login')
   async login(@Body() loginDto: LoginUserDto) {
     return this.userService.login(loginDto); // ★ 변경
-
   }
 
   // 로그아웃

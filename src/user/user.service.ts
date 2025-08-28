@@ -84,7 +84,6 @@ export class UserService {
       accessToken,
       refreshToken,
     };
-
   }
 
   // 로그아웃시 삭제
