@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
-import { Namespace } from 'socket.io';
 import { ChatRoom, ChatRoomDocument } from './schemas/chat-room.schema';
 
 @Injectable()
