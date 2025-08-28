@@ -1,7 +1,7 @@
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Socket } from 'socket.io';
-import { JwtPayloadDto } from '../../user/auth/jwt-dto';
+import { JwtPayloadDto } from '../payload/jwt-dto';
 
 /* 
 소켓 핸드셰이크 단계에서 실행되는 미들웨어
