@@ -19,12 +19,13 @@ export class UserController {
   @Post('login')
   async login(@Body() loginDto: LoginUserDto) {
     return this.userService.login(loginDto); // ★ 변경
+
   }
 
   // 로그아웃
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  async logoutRUser() user: JwtPayloadDto) {
+  async logoutRUser(@ReqUser() user: JwtPayloadDto) {
     return this.userService.logout(user.sub);
   }
 

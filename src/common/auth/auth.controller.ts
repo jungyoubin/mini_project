@@ -11,7 +11,6 @@ export class AuthController {
     private authService: AuthService, // AuthService를 주입받음
   ) {}
 
-
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   async logout(@Req() req: Request) {

@@ -18,6 +18,21 @@ export class BoardController {
     return this.boardService.create(dto, user.sub);
   }
 
+  // 전체 조회
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  async findAll() {
+    const boards = await this.boardService.findAll();
+    return { boards };
+  }
+
+  // 개별 조회
+  @UseGuards(JwtAuthGuard)
+  @Get(':board_id')
+  async findOne(@Param('board_id') board_id: string) {
+    return this.boardService.findOne(board_id);
+
+  // 수정
   @UseGuards(JwtAuthGuard)
   @Patch(':board_id')
   async modify(
@@ -27,5 +42,6 @@ export class BoardController {
   ) {
     const writerProfileId: string = req.user?.sub ?? req.user?.profile_id ?? req.user;
     return this.boardService.modify(board_id, dto, writerProfileId);
+
   }
 }

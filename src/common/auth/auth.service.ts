@@ -19,7 +19,7 @@ export class AuthService {
   private sha256(s: string) {
     return createHash('sha256').update(s).digest('hex');
   }
-  
+
   // 로그아웃시 redis 삭제
   async logout(profile_id: string) {
     await this.redis.del(`rt:${profile_id}`);
