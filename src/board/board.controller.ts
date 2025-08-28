@@ -1,6 +1,7 @@
-import { Body, Controller, Post, Req, UseGuards, Delete, Param } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards, Get, Patch, Delete, Param } from '@nestjs/common';
 import { BoardService } from './board.service';
 import { CreateBoardDto } from './dto/create-board.dto';
+import { ModifyBoardDto } from './dto/modify-board.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt.guard';
 import { ReqUser } from '../common/decorators/user.decorator';
 import type { JwtPayloadDto } from 'src/common/payload/jwt-dto';
@@ -17,11 +18,37 @@ export class BoardController {
     return this.boardService.create(dto, user.sub);
   }
 
+
   // 게시판 삭제 -> 작성자만 가능하게
   @UseGuards(JwtAuthGuard)
   @Delete(':board_id')
   async remove(@Param('board_id') board_id: string, @Req() req: any) {
     const writerProfileId: string = req.user?.sub ?? req.user?.profile_id ?? req.user;
     return this.boardService.remove(board_id, writerProfileId);
+
+  // 전체 조회
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  async findAll() {
+    const boards = await this.boardService.findAll();
+    return { boards };
+  }
+
+  // 개별 조회
+  @UseGuards(JwtAuthGuard)
+  @Get(':board_id')
+  async findOne(@Param('board_id') board_id: string) {
+    return this.boardService.findOne(board_id);
+  }
+  // 수정
+  @UseGuards(JwtAuthGuard)
+  @Patch(':board_id')
+  async modify(
+    @Param('board_id') board_id: string, // URL 경로 파라미터
+    @Req() req: any, // 요청 객체(req.user)
+    @Body() dto: ModifyBoardDto, // 요청 바디 -> DTO 검증/ 변환
+  ) {
+    const writerProfileId: string = req.user?.sub ?? req.user?.profile_id ?? req.user;
+    return this.boardService.modify(board_id, dto, writerProfileId);
   }
 }
