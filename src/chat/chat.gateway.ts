@@ -39,8 +39,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // handshake 미들웨어
   afterInit(server: Namespace) {
+    this.server = server;
     server.use(wsHandshakeAuth(this.jwt, this.config)); // socket.io를 미들웨어로 등록하기(handshake에서 토큰 검증) -> 성공하면 client.data.user에 payload 주입
-    this.roomsService.setNamespace(this.server); // socket room의 현재 멤버를 조회할 수 있게 한다
+    this.roomsService.setNamespace(server); // socket room의 현재 멤버를 조회할 수 있게 한다
   }
 
   // socket 연결되면 실행
@@ -54,7 +55,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // 개인 채널 join 하기
     const userLabel = `user:${profileId}`;
-    client.join(userLabel);
+    client.join(userLabel); // socketIdrk user:{profileId} 룸에 저장됨
 
     // 자동 재조인하기 -> profileId로 DB조회 하고 room:{roomId}에 자동 조인시키기
     try {
@@ -82,5 +83,34 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('ping')
   handlePing(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
     client.emit('pong', { at: Date.now(), echo: data });
+  }
+
+  // socket room join -> 유저의 소켓을 해당 채팅룸으로 join 하기
+  // /chat/room/join 또는 /chat/room(방 생성) 에서 호출
+  async joinProfileToRoom(profileId: string, chatId: string) {
+    const userLabel = `user:${profileId}`;
+    const roomLabel = `room:${chatId}`;
+
+    // this.server.to(user:profileId) : 해당 유저의 소켓들에 대해서 타겟팅
+    // socketsJoin(room:chatId) :그 소켓들을 채팅방룸에 넣기
+    await this.server.to(userLabel).socketsJoin(roomLabel);
+
+    // 합류된 소켓들에게 알림
+    this.server.to(userLabel).emit('room/joined', { room_id: chatId });
+
+    return { joined: true as const };
+  }
+
+  // socket room 에 대한 멤버 조회 -> socketId, profile_id 반환
+  async getRoomMembers(roomId: string) {
+    const roomLabel = roomId.includes(':') ? roomId : `room:${roomId}`;
+    const sockets = await this.server.in(roomLabel).fetchSockets();
+
+    const members = sockets.map((s) => ({
+      socket_id: s.id,
+      profile_id: s.data?.user?.sub as string | undefined,
+    }));
+
+    return { room_id: roomId, count: members.length, members };
   }
 }
