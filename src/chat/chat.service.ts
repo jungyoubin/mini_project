@@ -3,7 +3,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
-import { MongoClient } from 'mongodb';
 import { Namespace } from 'socket.io';
 import { ChatRoom, ChatRoomDocument } from './schemas/chat-room.schema';
 
@@ -13,7 +12,6 @@ export class ChatService {
 
   constructor(
     @InjectModel(ChatRoom.name)
-    private readonly config: ConfigService,
     private readonly chatRoomModel: Model<ChatRoomDocument>,
   ) {}
 
@@ -31,7 +29,6 @@ export class ChatService {
     const doc = new this.chatRoomModel({
       room_id: uuidv4(),
       room_title: roomTitle,
-      // participants: Map<string, boolean>
       participants: new Map([[profileId, true]]),
     });
 

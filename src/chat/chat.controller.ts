@@ -5,7 +5,6 @@ import {
   Req,
   UseGuards,
   BadRequestException,
-  NotFoundException,
   Param,
   Get,
 } from '@nestjs/common';
@@ -34,14 +33,18 @@ export class ChatController {
     await this.rooms.addParticipant(room.room_id, profileId);
 
     // 생성자의 socket을 해당 room에 join하기
-    const joinedCount = await this.gateway.joinProfileToRoom(profileId, room.room_id);
+    await this.gateway.joinProfileToRoom(profileId, room.room_id);
+
+    // 응답 확인을 위해 participants에 넣기
+    const participants = Object.keys(room.participants_map ?? {}).map((pid) => ({
+      profile_id: pid,
+    }));
 
     return {
       room_id: room.room_id,
       room_title: room.room_title,
       creator_profile_id: profileId,
-      joined_socket_count: joinedCount,
-      created: true,
+      participants,
     };
   }
 
