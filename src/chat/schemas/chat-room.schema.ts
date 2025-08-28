@@ -6,6 +6,7 @@ export type ChatRoomDocument = HydratedDocument<ChatRoom>;
 @Schema({
   collection: 'chat_rooms',
   timestamps: { createdAt: 'room_date', updatedAt: false },
+  versionKey: false,
 })
 export class ChatRoom {
   @Prop({ type: String, required: true })
