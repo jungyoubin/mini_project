@@ -41,7 +41,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   afterInit(server: Namespace) {
     this.server = server;
     server.use(wsHandshakeAuth(this.jwt, this.config)); // socket.io를 미들웨어로 등록하기(handshake에서 토큰 검증) -> 성공하면 client.data.user에 payload 주입
-    this.roomsService.setNamespace(server); // socket room의 현재 멤버를 조회할 수 있게 한다
   }
 
   // socket 연결되면 실행

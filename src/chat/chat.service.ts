@@ -1,28 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import { Namespace } from 'socket.io';
 import { ChatRoom, ChatRoomDocument } from './schemas/chat-room.schema';
 
 @Injectable()
 export class ChatService {
-  private nsp!: Namespace; // Gateway가 넘겨줄 socket.io namespace
-
   constructor(
     @InjectModel(ChatRoom.name)
     private readonly chatRoomModel: Model<ChatRoomDocument>,
   ) {}
 
-  // gateway에서 afterInit에서 넘겨줄 때 호출
-  setNamespace(nsp: Namespace) {
-    this.nsp = nsp;
-  }
-
   // room_id로 방 조회
   async findRoomById(roomId: string): Promise<ChatRoomDocument | null> {
-    return this.chatRoomModel.findOne({ room_id: roomId });
+    return this.chatRoomModel.findOne({ room_id: roomId }).exec(); // .exec()을 붙여서 확실히 Promise 리턴
   }
 
   async createRoomByProfile(profileId: string, roomTitle: string) {
