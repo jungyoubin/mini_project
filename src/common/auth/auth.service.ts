@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
+import { UserService } from '../../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'crypto';
@@ -17,6 +18,12 @@ export class AuthService {
   // 검증 받을때, 사용자가 가지고 있는 RT를 sha256 해서 redis에 있는것과 비교진행하기
   private sha256(s: string) {
     return createHash('sha256').update(s).digest('hex');
+  }
+  
+  // 로그아웃시 redis 삭제
+  async logout(profile_id: string) {
+    await this.redis.del(`rt:${profile_id}`);
+    return { message: '로그아웃 완료' };
   }
 
   // 유저별 키의 해시와 비교하기
