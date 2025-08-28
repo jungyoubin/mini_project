@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Board, BoardDocument } from './schemas/board.schema';
@@ -91,7 +96,7 @@ export class BoardService {
     await this.boardModel.deleteOne({ board_id }).exec();
     return { deleted: true, board_id, message: '게시판이 삭제되었습니다' };
   }
-    
+
   /* 
   lean() 함수
   쿼리의 결과를 JavaScript 객체로 반환한다. 
@@ -101,7 +106,7 @@ export class BoardService {
   promise객체 반환 
   -> 쿼리가 실행되고 결과만 반환
   */
-  
+
   // 전체 조회
   async findAll() {
     return (
@@ -126,11 +131,10 @@ export class BoardService {
   a == 'a' true
   a === 'a' false
   */
-   
+
   // 게시판 수정
   async modify(board_id: string, dto: ModifyBoardDto, writerProfileId: string) {
-
-    if (dto.board_title === undefined && dto.board_content === undefined) {
+    if (dto.boardTitle === undefined && dto.boardContent === undefined) {
       throw new BadRequestException('수정할 필드가 없습니다. 제목 또는 콘텐츠 입력 바람');
     }
 
@@ -142,11 +146,10 @@ export class BoardService {
       throw new NotFoundException('작성자만 수정이 가능하다');
     }
 
-    if (dto.board_title !== undefined) board.board_title = dto.board_title;
-    if (dto.board_content !== undefined) board.board_content = dto.board_content;
+    if (dto.boardTitle !== undefined) board.board_title = dto.boardTitle;
+    if (dto.boardContent !== undefined) board.board_content = dto.boardContent;
     board.board_m_date = new Date(); // 수정일 반영
 
     return board.save(); // 스키마 내용 그대로 적용하기
-
   }
 }
