@@ -1,8 +1,15 @@
 import { Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { ReqUser } from '../decorators/user.decorator';
+import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt.guard';
 import { JwtRefreshGuard } from '../guards/jwt-refresh.guard';
-import type { Request } from 'express';
+import { JwtPayloadDto } from '../payload/jwt-dto';
+
+type RefreshUser = {
+  refreshToken: string;
+  profileId: string;
+};
 
 // 로그인 / 토큰 재발급 api
 @Controller('auth')
@@ -13,20 +20,16 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  async logout(@Req() req: Request) {
-    const user = req.user as { profile_id: string };
-    return await this.authService.logout(user.profile_id);
+  async logout(@ReqUser() user: JwtPayloadDto) {
+    const profileId = user.sub;
+    return await this.authService.logout(profileId);
   }
 
   @UseGuards(JwtRefreshGuard)
-  @Post('reissue') // access token 재발급
-  async reissue(@Req() req: Request) {
+  @Post('reissue')
+  async reissue(@Req() req: Request & { user: RefreshUser }) {
     // JwtRefreshStrategy.validate() 에서 준거
-    const { refreshToken, profile_id, user_name } = req.user as {
-      refreshToken: string;
-      profile_id: string;
-      user_name?: string;
-    };
-    return await this.authService.reissueAccessToken(refreshToken, { profile_id, user_name });
+    const { refreshToken, profileId } = req.user;
+    return this.authService.reissueAccessToken(refreshToken, { profileId });
   }
 }
