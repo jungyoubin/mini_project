@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export type BoardDocument = Board & Document;
 
-@Schema({ collection: 'board_list', versionKey: false })
+@Schema({ collection: 'boardList', versionKey: false })
 export class Board {
   @Prop({ type: String, default: uuidv4 })
   boardId: string;
