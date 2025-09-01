@@ -1,7 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
-import { UserService } from '../../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'crypto';
@@ -20,20 +19,11 @@ export class AuthService {
     return createHash('sha256').update(s).digest('hex');
   }
 
-  // 로그아웃시 redis 삭제
-  async logout(profile_id: string) {
-    await this.redis.del(`rt:${profile_id}`);
-    return { message: '로그아웃 완료' };
-  }
-
   // 유저별 키의 해시와 비교하기
-  async reissueAccessToken(
-    refreshToken: string,
-    payloadFromGuard: { profile_id: string; user_name?: string },
-  ) {
+  async reissueAccessToken(refreshToken: string, payloadFromGuard: { profileId: string }) {
     try {
       // Redis에서 사용자별 저장된 refresh 토큰 가져와 비교
-      const key = `rt:${payloadFromGuard.profile_id}`;
+      const key = `rt:${payloadFromGuard.profileId}`;
       const storedHash = await this.redis.get(key);
 
       if (!storedHash || storedHash !== this.sha256(refreshToken)) {
@@ -43,7 +33,7 @@ export class AuthService {
       // 새로운 AT 발급
       const accessTTL = this.configService.get<string>('jwt.accessTTL', '1h');
       const newAccessToken = this.jwtService.sign(
-        { sub: payloadFromGuard.profile_id, user_name: payloadFromGuard.user_name },
+        { sub: payloadFromGuard.profileId },
         { expiresIn: accessTTL },
       );
 

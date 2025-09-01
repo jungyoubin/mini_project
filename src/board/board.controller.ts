@@ -20,24 +20,24 @@ export class BoardController {
 
   // 좋아요 하기
   @UseGuards(JwtAuthGuard)
-  @Post(':board_id/like')
-  async like(@Param('board_id') board_id: string, @ReqUser() user: JwtPayloadDto) {
-    return this.boardService.like(board_id, user.sub);
+  @Post(':boardId/like')
+  async like(@Param('boardId') boardId: string, @ReqUser() user: JwtPayloadDto) {
+    return this.boardService.like(boardId, user.sub);
   }
 
   // 좋아요 취소
   @UseGuards(JwtAuthGuard)
-  @Delete(':board_id/like')
-  async unlike(@Param('board_id') board_id: string, @ReqUser() user: JwtPayloadDto) {
-    return this.boardService.unlike(board_id, user.sub);
+  @Delete(':boardId/like')
+  async unlike(@Param('boardId') boardId: string, @ReqUser() user: JwtPayloadDto) {
+    return this.boardService.unlike(boardId, user.sub);
   }
 
   // 게시판 삭제 -> 작성자만 가능하게
   @UseGuards(JwtAuthGuard)
-  @Delete(':board_id')
-  async remove(@Param('board_id') board_id: string, @ReqUser() user: JwtPayloadDto) {
+  @Delete(':boardId')
+  async remove(@Param('boardId') boardId: string, @ReqUser() user: JwtPayloadDto) {
     const writerProfileId: string = user.sub;
-    return this.boardService.remove(board_id, writerProfileId);
+    return this.boardService.remove(boardId, writerProfileId);
   }
 
   // 전체 조회
@@ -50,20 +50,21 @@ export class BoardController {
 
   // 개별 조회
   @UseGuards(JwtAuthGuard)
-  @Get(':board_id')
-  async findOne(@Param('board_id') board_id: string) {
-    return this.boardService.findOne(board_id);
+  @Get(':boardId')
+  async findOne(@Param('boardId') boardId: string) {
+    return this.boardService.findOne(boardId);
   }
 
   // 수정
   @UseGuards(JwtAuthGuard)
-  @Patch(':board_id')
+  @Patch(':boardId')
   async modify(
-    @Param('board_id') board_id: string, // URL 경로 파라미터
+    @Param('boardId') boardId: string, // URL 경로 파라미터
     @ReqUser() user: JwtPayloadDto, // 요청 객체(req.user)
     @Body() dto: ModifyBoardDto, // 요청 바디 -> DTO 검증/ 변환
   ) {
     const writerProfileId: string = user.sub;
-    return this.boardService.modify(board_id, dto, writerProfileId);
+
+    return this.boardService.modify(boardId, dto, writerProfileId);
   }
 }

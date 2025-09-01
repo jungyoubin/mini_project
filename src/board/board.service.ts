@@ -16,22 +16,22 @@ export class BoardService {
 
   async create(dto: CreateBoardDto, writerProfileId: string) {
     return this.boardModel.create({
-      board_title: dto.boardTitle,
-      board_content: dto.boardContent,
-      board_writer: writerProfileId,
+      boardTitle: dto.boardTitle,
+      boardContent: dto.boardContent,
+      boardWriter: writerProfileId,
     });
   }
 
   // 좋아요
   async like(boardId: string, profileId: string) {
     // 게시글 존재 확인
-    const exists = await this.boardModel.exists({ board_id: boardId });
+    const exists = await this.boardModel.exists({ boardId });
     if (!exists) throw new NotFoundException('게시글을 찾을 수 없습니다.');
 
     // true면 안 함
-    const key = `board_liked_people.${profileId}`;
+    const key = `boardLikedPeople.${profileId}`;
     const { modifiedCount } = await this.boardModel.updateOne(
-      { board_id: boardId, [key]: { $ne: true } }, // 이미 true면 매치 안 됨
+      { boardId, [key]: { $ne: true } }, // 이미 true면 매치 안 됨
       { $set: { [key]: true } }, // 추가(또는 true로 세팅)
     );
 
@@ -40,19 +40,19 @@ export class BoardService {
       throw new BadRequestException('이미 좋아요를 눌렀습니다.');
     }
 
-    // const like_count = await this.countLikes(boardId); // 추후에 좋아요 개수
+    // const likeCount = await this.countLikes(boardId); // 추후에 좋아요 개수
     return { boardId, liked: true };
   }
 
   // 좋아요 취소
   async unlike(boardId: string, profileId: string) {
     // 게시글 존재 확인
-    const exists = await this.boardModel.exists({ board_id: boardId });
+    const exists = await this.boardModel.exists({ boardId });
     if (!exists) throw new NotFoundException('게시글을 찾을 수 없습니다.');
 
-    const key = `board_liked_people.${profileId}`;
+    const key = `boardLikedPeople.${profileId}`;
     const { modifiedCount } = await this.boardModel.updateOne(
-      { board_id: boardId, [key]: { $exists: true } }, // 키 없으면 매치 안 됨
+      { boardId, [key]: { $exists: true } }, // 키 없으면 매치 안 됨
       { $unset: { [key]: '' } }, // 보통적으로 '' 빈 값으로 쓴다고 함(ture로 써도 상관없음)
     );
 
@@ -62,39 +62,39 @@ export class BoardService {
     }
 
     // 추후에 좋아요 수 필요하면 아래 주석 제거
-    // const like_count = await this.countLikes(board_id);
+    // const likeCount = await this.countLikes(boardId);
     return { boardId, liked: false };
   }
 
   // 좋아요 수 집계하기 추후에 필요시 아래 주석 확인하기
   // private async countLikes(boardId: string): Promise<number> {
-  //   const [doc] = await this.boardModel.aggregate<{ board_liked_count: number }>([
-  //     { $match: { board_id: boardId } },
+  //   const [doc] = await this.boardModel.aggregate<{ boardLikedCount: number }>([
+  //     { $match: { boardId } },
   //     {
   //       $addFields: {
-  //         board_liked_count: {
-  //           $size: { $objectToArray: '$board_liked_people' }, // Map → array → size
+  //         boardLikedCount: {
+  //           $size: { $objectToArray: '$boardLikedPeople' }, // Map → array → size
   //         },
   //       },
   //     },
-  //     { $project: { _id: 0, board_liked_count: 1 } },
+  //     { $project: { _id: 0, boardLikedCount: 1 } },
   //   ]);
 
-  //   return doc?.board_liked_count ?? 0;
+  //   return doc?.boardLikedCount ?? 0;
   // }
 
   // 게시판 삭제하기
-  async remove(board_id: string, writerProfileId: string) {
-    const board = await this.boardModel.findOne({ board_id }).exec();
+  async remove(boardId: string, writerProfileId: string) {
+    const board = await this.boardModel.findOne({ boardId }).exec();
     if (!board) {
       throw new NotFoundException('게시글을 찾을 수 없습니다.');
     }
-    if (board.board_writer !== writerProfileId) {
+    if (board.boardWriter !== writerProfileId) {
       throw new ForbiddenException('작성자만 삭제할 수 있습니다.');
     }
 
-    await this.boardModel.deleteOne({ board_id }).exec();
-    return { deleted: true, board_id, message: '게시판이 삭제되었습니다' };
+    await this.boardModel.deleteOne({ boardId }).exec();
+    return { deleted: true, boardId, message: '게시판이 삭제되었습니다' };
   }
 
   /* 
@@ -111,16 +111,16 @@ export class BoardService {
   async findAll() {
     return (
       this.boardModel
-        .find({}, { board_content: 0 }) // board_content : 0 으로 하여서 해당 내용은 안 가져오기
-        // .sort({ board_date: -1 }) // 최신순으로 정렬이 필요하면 주석 제거하기
+        .find({}, { boardContent: 0 }) // boardContent : 0 으로 하여서 해당 내용은 안 가져오기
+        // .sort({ boardDate: -1 }) // 최신순으로 정렬이 필요하면 주석 제거하기
         .lean()
         .exec()
     );
   }
 
   // 개별 조회
-  async findOne(board_id: string) {
-    const doc = await this.boardModel.findOne({ board_id }).lean().exec();
+  async findOne(boardId: string) {
+    const doc = await this.boardModel.findOne({ boardId }).lean().exec();
     if (!doc) throw new NotFoundException('게시글을 찾을 수 없습니다.');
     return doc;
   }
@@ -133,22 +133,22 @@ export class BoardService {
   */
 
   // 게시판 수정
-  async modify(board_id: string, dto: ModifyBoardDto, writerProfileId: string) {
+  async modify(boardId: string, dto: ModifyBoardDto, writerProfileId: string) {
     if (dto.boardTitle === undefined && dto.boardContent === undefined) {
       throw new BadRequestException('수정할 필드가 없습니다. 제목 또는 콘텐츠 입력 바람');
     }
 
-    const board = await this.boardModel.findOne({ board_id }).exec();
+    const board = await this.boardModel.findOne({ boardId }).exec();
     if (!board) {
       throw new NotFoundException('게시글을 찾을 수 없다');
     }
-    if (board.board_writer !== writerProfileId) {
+    if (board.boardWriter !== writerProfileId) {
       throw new NotFoundException('작성자만 수정이 가능하다');
     }
 
-    if (dto.boardTitle !== undefined) board.board_title = dto.boardTitle;
-    if (dto.boardContent !== undefined) board.board_content = dto.boardContent;
-    board.board_m_date = new Date(); // 수정일 반영
+    if (dto.boardTitle !== undefined) board.boardTitle = dto.boardTitle;
+    if (dto.boardContent !== undefined) board.boardContent = dto.boardContent;
+    board.boardModifiedDate = new Date(); // 수정일 반영
 
     return board.save(); // 스키마 내용 그대로 적용하기
   }

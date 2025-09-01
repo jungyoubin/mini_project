@@ -4,36 +4,37 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 
 @Entity('user')
 export class User {
-  @PrimaryGeneratedColumn('uuid')
-  profile_id: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'profile_id' })
+  profileId: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: false })
-  user_id: string;
+  @Column({ type: 'varchar', length: 20, nullable: false, name: 'user_id' })
+  userId: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
-  user_pw: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: false })
-  user_name: string;
+  @Column({ type: 'varchar', length: 255, nullable: false, name: 'user_pw' })
+  userPw: string;
 
-  @Column({ type: 'varchar', length: 40, nullable: false })
-  user_email: string;
+  @Column({ type: 'varchar', length: 20, nullable: false, name: 'user_name' })
+  userName: string;
 
-  @Column({ type: 'varchar', length: 13, nullable: false })
-  user_phone: string;
+  @Column({ type: 'varchar', length: 40, nullable: false, name: 'user_email' })
+  userEmail: string;
+
+  @Column({ type: 'varchar', length: 13, nullable: false, name: 'user_phone' })
+  userPhone: string;
 
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword(): Promise<void> {
     try {
-      if (this.user_pw) {
+      if (this.userPw) {
         // 이미 bcrypt 형태면 재해시하지 않기로 하기 -> user_pw를 만나면 계속 해시 하기때문에
         if (
-          !this.user_pw.startsWith('$2a$') &&
-          !this.user_pw.startsWith('$2b$') &&
-          !this.user_pw.startsWith('$2y$')
+          !this.userPw.startsWith('$2a$') &&
+          !this.userPw.startsWith('$2b$') &&
+          !this.userPw.startsWith('$2y$')
         ) {
-          this.user_pw = await bcrypt.hash(this.user_pw, 10);
+          this.userPw = await bcrypt.hash(this.userPw, 10);
         }
       }
     } catch (err) {
@@ -43,7 +44,7 @@ export class User {
 
   async checkPassword(password: string): Promise<boolean> {
     try {
-      return await bcrypt.compare(password, this.user_pw);
+      return await bcrypt.compare(password, this.userPw);
     } catch (err) {
       return false;
     }
