@@ -1,10 +1,7 @@
-import { IsOptional, IsString, Max, Min, IsUUID } from 'class-validator';
+import { IsOptional, IsString, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class MessageHistoryDto {
-  @IsUUID('4') // roomId는 v4 UUID가 아니라면 @IsString()으로 변경
-  roomId!: string;
-
   @IsOptional()
   @IsString() // ISO 문자열
   cursor?: string;

@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../common/guards/jwt.guard';
 import { ChatService } from './chat.service';
 import { wsHandshakeAuth } from '../common/guards/ws-handshake-auth';
 import { SendMessageDto } from './dto/send-message.dto';
+import { MessageHistoryDto } from './dto/message-history.dto';
 
 /*
 socketId를 Redis에 저장하지 않고 user:{profileId}에 Join 하기
@@ -112,5 +113,61 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }));
 
     return { roomId, count: members.length, members };
+  }
+
+  // 메시지 전송 : DB 저장 -> 방 전체(본인 포함) 브로드캐스트 진행하기
+  @SubscribeMessage('message/send')
+  async handleSendMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() dto: SendMessageDto, // { roomId, chatMessage } (DTO 검증/변환 적용)
+  ) {
+    const profileId: string = client.data.user.sub;
+    if (!profileId) return;
+
+    const { roomId, chatMessage } = dto;
+    const roomLabel = `room:${roomId}`;
+
+    const saved = await this.roomsService.sendMessage(roomId, profileId, chatMessage);
+
+    this.server.to(roomLabel).emit('message/new', {
+      roomId: saved.roomId,
+      messageId: saved.messageId,
+      profileId: saved.profileId,
+      messageContent: saved.messageContent,
+      messageDate: saved.messageDate,
+    });
+  }
+
+  // 히스토리 가져오기 cursor/limit만 DTO로 검증
+  @SubscribeMessage('message/history')
+  async handleHistory(
+    @ConnectedSocket() client: Socket,
+    @MessageBody('roomId') roomId: string, // whitelist로 지워지는 것 방지
+    @MessageBody() page: MessageHistoryDto, // { cursor?, limit? }만 검증/변환
+  ) {
+    const profileId: string | undefined = client.data?.user?.sub;
+    if (!profileId) return;
+
+    const limit = page.limit ?? 50; //  기본 50 (1 ~ 200 설정)
+    const cursorDate = page.cursor ? new Date(page.cursor) : undefined;
+
+    // (옵션) 멤버만 접근 허용
+    const isMember = await this.roomsService.isParticipant(roomId, profileId);
+    if (!isMember) {
+      client.emit('message/error', { roomId, code: 'NOT_MEMBER' });
+      return;
+    }
+
+    const rows = await this.roomsService.listMessages(roomId, limit, cursorDate);
+    const messages = [...rows]; // 최신 -> 오래된 순으로 전달(반대 원하면 [...rows].reverse() )
+
+    const nextCursor = messages.length ? messages[0].messageDate : null;
+
+    client.emit('message/history', {
+      roomId,
+      messages,
+      nextCursor,
+      hasMore: rows.length === limit,
+    });
   }
 }
