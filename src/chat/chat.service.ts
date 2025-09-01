@@ -166,13 +166,13 @@ export class ChatService {
     return this.chatRoomModel.aggregate<RoomListItem>(pipeline).exec();
   }
 
-  async sendMessage(roomId: string, profileId: string, messageContent: string) {
+  async sendMessage(roomId: string, profileId: string, content: string) {
     const now = new Date();
     const doc = await this.chatMessageModel.create({
       roomId,
       messageId: uuidv7(),
       profileId,
-      messageContent,
+      messageContent: content,
       messageDate: now,
     });
     return doc.toObject();

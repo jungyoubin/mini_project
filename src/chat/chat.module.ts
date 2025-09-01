@@ -7,16 +7,15 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ChatRoom, ChatRoomSchema } from './schemas/chat-room.schema';
-import { Message, MessageSchema } from './schemas/send-message.schema';
+import { ChatMessage, ChatMessageSchema } from './schemas/chat-message.schema';
 
 @Module({
   imports: [
     ConfigModule,
     JwtModule.register({}),
-
     MongooseModule.forFeature([
       { name: ChatRoom.name, schema: ChatRoomSchema },
-      { name: Message.name, schema: MessageSchema },
+      { name: ChatMessage.name, schema: ChatMessageSchema },
     ]),
   ],
   controllers: [ChatController],
