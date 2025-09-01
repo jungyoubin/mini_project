@@ -11,40 +11,41 @@ import { UseGuards, Logger } from '@nestjs/common';
 import { Socket, Namespace } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { JwtAuthGuard } from '../common/guards/jwt.guard';
 import { ChatService } from './chat.service';
 import { wsHandshakeAuth } from '../common/guards/ws-handshake-auth';
+import { SendMessageDto } from './dto/send-message.dto';
+import { MessageHistoryDto } from './dto/message-history.dto';
 
 /*
 socketId를 Redis에 저장하지 않고 user:{profileId}에 Join 하기
 사용자가 속한 방은 재 Join 진행하기(새로고침으로 socketId 바뀌어도 복구하기)
-메시지는 room:{roomId}로 진행
+메시지는 room:{chatId}로 진행
 */
 @WebSocketGateway({
   namespace: 'chat', // /chat 로 접속 -> postman에서 localhost:3000/chat
   cors: { origin: true },
   path: '/socket.io',
 })
-@UseGuards(JwtAuthGuard)
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Namespace; // 현재의 네임스페이스(/chat)의 socket.io
   private readonly logger = new Logger(ChatGateway.name);
 
+  // JWT, Config, RoomService 주입 받기
   constructor(
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
-    private readonly chatService: ChatService,
+    private readonly jwt: JwtService,
+    private readonly config: ConfigService,
+    private readonly roomsService: ChatService,
   ) {}
 
   // handshake 미들웨어
   afterInit(server: Namespace) {
     this.server = server;
-    server.use(wsHandshakeAuth(this.jwtService, this.configService)); // socket.io를 미들웨어로 등록하기(handshake에서 토큰 검증) -> 성공하면 client.data.user에 payload 주입
+    server.use(wsHandshakeAuth(this.jwt, this.config)); // socket.io를 미들웨어로 등록하기(handshake에서 토큰 검증) -> 성공하면 client.data.user에 payload 주입
   }
 
   // socket 연결되면 실행
   async handleConnection(client: Socket) {
-    const profileId: string | undefined = client.data?.user?.sub; // 핸드셰이크 미들웨이가 넣어준 client.data.user에서 sub(profileId)추출하기
+    const profileId: string | undefined = client.data?.user?.sub; // 핸드셰이크 미들웨이가 넣어준 client.data.uesr에서 sub(profileId)추출하기
 
     if (!profileId) {
       client.disconnect(true);
@@ -57,13 +58,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // 자동 재조인하기 -> profileId로 DB조회 하고 room:{roomId}에 자동 조인시키기
     try {
-      const roomIds = await this.chatService.findRoomIdsByMember(profileId); // DB에서 사용자가 들어간 채팅방 ID 가져오기
-      roomIds.forEach((roomId) => client.join(`room:${roomId}`)); // 가져온 각각의 roomId에 대해서 join 하기
+      const roomIds = await this.roomsService.findRoomIdsByMember(profileId); // DB에서 사용자가 들어간 채팅방 ID 가져오기
+      roomIds.forEach((chatId) => client.join(`room:${chatId}`)); // 가져온 각각의 chatId에 대해서 join 하기
 
       // 접속하였던 방들에대해서 rejoin이 출력
       this.logger.log(`auto rejoined rooms for ${profileId}: ${roomIds.join(', ')}`);
 
-      // < 테스트용 코드 > 방 자동 재접속을 하였을때, 방들에 Socket이 잘 들어갔는지 확인하는 코드
+      // < 테스트용 코드 > 방 자동 재접속을 하였을 때, 방들에 Socket이 잘 들어갔는지 확인하는 코드
       client.emit('rooms/rejoined', { rooms: roomIds.map((id) => `room:${id}`) });
     } catch (e) {
       this.logger.warn(`auto rejoin failed: ${e?.message}`);
@@ -76,18 +77,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.emit('socket/registered', { socketId: client.id });
   }
 
+  ////////// 추후 필요하면 진행하기 ////////////
   async handleDisconnect(client: Socket) {
     this.logger.log(`disconnected: socket=${client.id}`);
   }
 
   // socket room join -> 유저의 소켓을 해당 채팅룸으로 join 하기
-  // /chat/room/join 또는 /chat/room(방 생성) 에서 호출(사용된다)
+  // /chat/room/join 또는 /chat/room(방 생성) 에서 호출
   async joinProfileToRoom(profileId: string, roomId: string) {
     const userLabel = `user:${profileId}`;
     const roomLabel = `room:${roomId}`;
 
     // this.server.to(user:profileId) : 해당 유저의 소켓들에 대해서 타겟팅
-    // socketsJoin(roomId) :그 소켓들을 채팅방룸에 넣기
+    // socketsJoin(room:chatId) :그 소켓들을 채팅방룸에 넣기
     await this.server.to(userLabel).socketsJoin(roomLabel);
 
     // 합류된 소켓들에게 알림
@@ -103,9 +105,66 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const members = sockets.map((s) => ({
       socketId: s.id,
-      profileId: s.data?.user?.sub,
+      profileId: s.data.user.sub as string | undefined,
     }));
 
     return { roomId, count: members.length, members };
+  }
+
+  // 메시지 전송 : DB 저장 -> 방 전체(본인 포함) 브로드캐스트 진행하기
+  @SubscribeMessage('sendMessage')
+  async handleSendMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() dto: SendMessageDto, // { roomId, chatMessage } (DTO 검증/변환 적용)
+  ) {
+    const profileId: string = client.data.user.sub;
+    if (!profileId) return;
+
+    const { roomId, chatMessage } = dto;
+    const roomLabel = `room:${roomId}`;
+
+    const saved = await this.roomsService.sendMessage(roomId, profileId, chatMessage);
+
+    this.server.to(roomLabel).emit('sendMessage', {
+      roomId: saved.roomId,
+      messageId: saved.messageId,
+      profileId: saved.profileId,
+      messageContent: saved.messageContent,
+      messageDate: saved.messageDate,
+    });
+  }
+
+  // 히스토리 가져오기 cursor/limit만 DTO로 검증
+  @SubscribeMessage('message/history')
+  async handleHistory(
+    @ConnectedSocket() client: Socket,
+    // @MessageBody('roomId') roomId: string, // whitelist로 지워지는 것 방지
+    @MessageBody() page: MessageHistoryDto, // { cursor?, limit? }만 검증/변환
+  ) {
+    const profileId: string | undefined = client.data?.user?.sub;
+    if (!profileId) return;
+
+    const roomId = page.roomId;
+    const limit = page.limit ?? 50; //  기본 50 (1 ~ 200 설정)
+    const cursorDate = page.cursor ? new Date(page.cursor) : undefined;
+
+    // (옵션) 멤버만 접근 허용
+    const isMember = await this.roomsService.isParticipant(roomId, profileId);
+    if (!isMember) {
+      client.emit('message/error', { roomId, code: 'NOT_MEMBER' });
+      return;
+    }
+
+    const rows = await this.roomsService.listMessages(roomId, limit, cursorDate);
+    const messages = [...rows]; // 최신 -> 오래된 순으로 전달(반대 원하면 [...rows].reverse() )
+
+    const nextCursor = messages.length ? messages[0].messageDate : null;
+
+    client.emit('message/history', {
+      roomId,
+      messages,
+      nextCursor,
+      hasMore: rows.length === limit,
+    });
   }
 }
