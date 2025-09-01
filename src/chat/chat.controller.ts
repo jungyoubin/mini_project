@@ -2,9 +2,9 @@ import {
   Body,
   Controller,
   Post,
-  Req,
   UseGuards,
   BadRequestException,
+  NotFoundException,
   Param,
   Get,
 } from '@nestjs/common';
@@ -12,6 +12,8 @@ import { ChatService } from './chat.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { JwtAuthGuard } from '../common/guards/jwt.guard';
 import { ChatGateway } from './chat.gateway';
+import { ReqUser } from '../common/decorators/user.decorator';
+import { JwtPayloadDto } from 'src/common/payload/jwt-dto';
 
 @Controller('chat')
 export class ChatController {
@@ -22,28 +24,28 @@ export class ChatController {
 
   @UseGuards(JwtAuthGuard)
   @Post('room')
-  async create(@Req() req: any, @Body() dto: CreateRoomDto) {
-    const profileId: string | undefined = req.user?.sub;
+  async create(@ReqUser() user: JwtPayloadDto, @Body() dto: CreateRoomDto) {
+    const profileId: string | undefined = user.sub;
     if (!profileId) throw new BadRequestException('사용자 payload 문제 이슈');
 
     // 방 생성
-    const room = await this.rooms.createRoomByProfile(profileId, dto.roomTitle);
+    const room = await this.rooms.createRoom(profileId, dto.roomTitle);
 
     // DB의 참가자 추가
-    await this.rooms.addParticipant(room.room_id, profileId);
+    await this.rooms.addParticipant(room.roomId, profileId);
 
     // 생성자의 socket을 해당 room에 join하기
-    await this.gateway.joinProfileToRoom(profileId, room.room_id);
+    await this.gateway.joinProfileToRoom(profileId, room.roomId);
 
     // 응답 확인을 위해 participants에 넣기
-    const participants = Object.keys(room.participants_map ?? {}).map((pid) => ({
-      profile_id: pid,
+    const participants = Object.keys(room.participantsMap ?? {}).map((profileId) => ({
+      profileId,
     }));
 
     return {
-      room_id: room.room_id,
-      room_title: room.room_title,
-      creator_profile_id: profileId,
+      roomId: room.roomId,
+      roomTitle: room.roomTitle,
+      creatorProfileId: profileId,
       participants,
     };
   }

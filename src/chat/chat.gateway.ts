@@ -86,30 +86,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // socket room join -> 유저의 소켓을 해당 채팅룸으로 join 하기
   // /chat/room/join 또는 /chat/room(방 생성) 에서 호출
-  async joinProfileToRoom(profileId: string, chatId: string) {
+  async joinProfileToRoom(profileId: string, roomId: string) {
     const userLabel = `user:${profileId}`;
-    const roomLabel = `room:${chatId}`;
+    const roomLabel = `room:${roomId}`;
 
     // this.server.to(user:profileId) : 해당 유저의 소켓들에 대해서 타겟팅
-    // socketsJoin(room:chatId) :그 소켓들을 채팅방룸에 넣기
+    // socketsJoin(roomId) :그 소켓들을 채팅방룸에 넣기
     await this.server.to(userLabel).socketsJoin(roomLabel);
 
     // 합류된 소켓들에게 알림
-    this.server.to(userLabel).emit('room/joined', { room_id: chatId });
+    this.server.to(userLabel).emit('room/joined', { roomId });
 
     return { joined: true as const };
   }
 
-  // socket room 에 대한 멤버 조회 -> socketId, profile_id 반환
+  // socket room 에 대한 멤버 조회 -> socketId, profileId 반환
   async getRoomMembers(roomId: string) {
     const roomLabel = roomId.includes(':') ? roomId : `room:${roomId}`;
     const sockets = await this.server.in(roomLabel).fetchSockets();
 
     const members = sockets.map((s) => ({
-      socket_id: s.id,
-      profile_id: s.data?.user?.sub as string | undefined,
+      socketId: s.id,
+      profileId: s.data.user.sub as string | undefined,
     }));
 
-    return { room_id: roomId, count: members.length, members };
+    return { roomId, count: members.length, members };
   }
 }

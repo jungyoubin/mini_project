@@ -11,26 +11,27 @@ export class ChatService {
     private readonly chatRoomModel: Model<ChatRoomDocument>,
   ) {}
 
-  // room_id로 방 조회
+  // roomId로 방 조회
   async findRoomById(roomId: string): Promise<ChatRoomDocument | null> {
-    return this.chatRoomModel.findOne({ room_id: roomId }).exec(); // .exec()을 붙여서 확실히 Promise 리턴
+    return this.chatRoomModel.findOne({ roomId }).exec(); // .exec()을 붙여서 확실히 Promise 리턴
   }
 
-  async createRoomByProfile(profileId: string, roomTitle: string) {
+  // 방 생성하기
+  async createRoom(profileId: string, roomTitle: string) {
     const doc = new this.chatRoomModel({
-      room_id: uuidv4(),
-      room_title: roomTitle,
+      roomId: uuidv4(),
+      roomTitle: roomTitle,
       participants: new Map([[profileId, true]]),
     });
 
     const saved = await doc.save();
 
     return {
-      room_id: saved.room_id,
-      room_title: saved.room_title,
-      room_date: saved.room_date.toISOString(),
-      participants_map: Object.fromEntries(saved.participants ?? []),
-      participant_count: saved.participants?.size ?? 0,
+      roomId: saved.roomId,
+      roomTitle: saved.roomTitle,
+      roomDate: saved.roomDate.toISOString(),
+      participantsMap: Object.fromEntries(saved.participants ?? []),
+      participantCount: saved.participants?.size ?? 0,
     };
   }
 
@@ -38,7 +39,7 @@ export class ChatService {
   async addParticipant(roomId: string, profileId: string): Promise<{ added: boolean }> {
     const res = await this.chatRoomModel
       .updateOne(
-        { room_id: roomId },
+        { roomId },
         { $set: { [`participants.${profileId}`]: true } }, // 키만 추가
         { upsert: false },
       )
@@ -55,10 +56,10 @@ export class ChatService {
   async findRoomIdsByMember(profileId: string): Promise<string[]> {
     const rows = await this.chatRoomModel
       .find({ [`participants.${profileId}`]: true })
-      .select({ room_id: 1, _id: 0 })
+      .select({ roomId: 1, _id: 0 })
       .lean()
       .exec();
 
-    return rows.map((r) => r.room_id);
+    return rows.map((r) => r.roomId);
   }
 }
