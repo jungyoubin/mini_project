@@ -8,6 +8,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, PipelineStage } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
+import { v7 as uuidv7 } from 'uuid';
 import { ChatRoom, ChatRoomDocument } from './schemas/chat-room.schema';
 import { ChatMessage, ChatMessageDocument } from './schemas/chat-message.schema';
 import { UserService } from 'src/user/user.service';
