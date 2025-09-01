@@ -5,7 +5,7 @@ import type { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 
 type RefreshPayload = {
-  sub: string; // profile_id
+  sub: string; // profileId
 };
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
@@ -22,13 +22,13 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     const tokenExtractor = ExtractJwt.fromAuthHeaderAsBearerToken();
     const refreshToken = tokenExtractor(req) || '';
 
-    if (!payload?.sub) {
+    if (!payload?.sub || !refreshToken) {
       throw new UnauthorizedException('No refresh token');
     }
 
     // req.user에 보내질 부분(controller에서 바로 사용함)
     return {
-      profile_id: payload.sub,
+      profileId: payload.sub,
       refreshToken, // 원본 문자열
     };
   }

@@ -5,7 +5,6 @@ import { JwtAuthGuard } from 'src/common/guards/jwt.guard';
 import { ReqUser } from '../common/decorators/user.decorator';
 import type { JwtPayloadDto } from 'src/common/payload/jwt-dto';
 
-
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -38,15 +37,15 @@ export class UserController {
 
   // 특정 유저 조회
   @UseGuards(JwtAuthGuard)
-  @Get(':profile_id')
-  async findOne(@Param('profile_id') profile_id: string) {
-    return this.userService.findByProfileId(profile_id);
+  @Get(':profileId')
+  async findOne(@Param('profileId') profileId: string) {
+    return this.userService.findByProfileId(profileId);
   }
 
   // 유저 정보 수정 (이메일, 이름, 아이디, 전화번호 등 일부 수정 가능)
   @UseGuards(JwtAuthGuard)
-  @Patch(':profile_id')
-  async update(@Param('profile_id') profile_id: string, @Body() body: UpdateUserDto) {
-    return this.userService.updateUser(profile_id, body);
+  @Patch(':profileId')
+  async update(@Param('profileId') profileId: string, @Body() body: UpdateUserDto) {
+    return this.userService.updateUser(profileId, body);
   }
 }
