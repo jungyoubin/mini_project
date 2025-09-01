@@ -21,16 +21,16 @@ export class Board {
   @Prop({ type: Date, default: null })
   boardModifiedDate: Date | null;
 
-  @Prop({ type: String, required: true }) // 작성자의 profile_id
+  @Prop({ type: String, required: true }) // 작성자의 profileId
   boardWriter: string;
 
-  // key = profile_id, value = true
+  // key = profileId, value = true
   @Prop({ type: Map, of: Boolean, default: {} })
   boardLikedPeople: Map<string, boolean>;
   /* 
   좋아요 갯수에 대해서는 따로 저장하지 않고 필요할 때,
   다음과 같은 $size를 통하여서 집계하여서 사용하려고 합니다.
-  board_liked_count: { $size: "$board_liked_people" }
+  boardLikedCount: { $size: "$boardLikedPeople" }
   */
 }
 export const BoardSchema = SchemaFactory.createForClass(Board);
