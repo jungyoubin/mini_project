@@ -19,12 +19,6 @@ export class AuthService {
     return createHash('sha256').update(s).digest('hex');
   }
 
-  // 로그아웃시 redis 삭제
-  async logout(profileId: string) {
-    await this.redis.del(`rt:${profileId}`);
-    return { message: '로그아웃 완료' };
-  }
-
   // 유저별 키의 해시와 비교하기
   async reissueAccessToken(refreshToken: string, payloadFromGuard: { profileId: string }) {
     try {

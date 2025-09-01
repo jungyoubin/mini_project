@@ -22,7 +22,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     const tokenExtractor = ExtractJwt.fromAuthHeaderAsBearerToken();
     const refreshToken = tokenExtractor(req) || '';
 
-    if (!payload?.sub) {
+    if (!payload?.sub || !refreshToken) {
       throw new UnauthorizedException('No refresh token');
     }
 
