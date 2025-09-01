@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Post,
-  Req,
   UseGuards,
   BadRequestException,
   NotFoundException,
@@ -47,5 +46,23 @@ export class ChatController {
       already_participant: already, // true면 기존 멤버였음, false는 신규 입장
       joined: true, // 들어가졌는지 확인
     };
+  }
+
+  // 전체 채팅방 가져오기
+  @UseGuards(JwtAuthGuard)
+  @Get('rooms')
+  async getRooms(@ReqUser() user: JwtPayloadDto) {
+    const profileId = user.sub;
+    if (!profileId) throw new BadRequestException('Invalid user payload');
+    return this.rooms.listAllRooms(profileId);
+  }
+
+  // 내가 들어간 채팅방만 가져오기
+  @UseGuards(JwtAuthGuard)
+  @Get('/myrooms')
+  async getMyRooms(@ReqUser() user: JwtPayloadDto) {
+    const profileId = user.sub;
+    if (!profileId) throw new BadRequestException('Invalid user payload');
+    return this.rooms.listMyRooms(profileId);
   }
 }
