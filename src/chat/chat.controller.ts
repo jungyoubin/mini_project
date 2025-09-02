@@ -103,4 +103,50 @@ export class ChatController {
     if (!profileId) throw new BadRequestException('Invalid user payload');
     return this.rooms.listMyRooms(profileId);
   }
+
+  // 방 나가기
+  @UseGuards(JwtAuthGuard)
+  @Delete(':roomId')
+  async leaveRoom(@ReqUser() user: JwtPayloadDto, @Param('roomId') roomId: string) {
+    const profileId = user.sub;
+    if (!profileId) throw new BadRequestException('Invalid user payload');
+
+    // 방 존재 확인
+    const room = await this.rooms.findRoomById(roomId);
+    if (!room) throw new NotFoundException('room not found');
+
+    // 참가자 여부 확인
+    const isMember = await this.rooms.isParticipant(roomId, profileId);
+    if (!isMember) throw new NotFoundException('방 참여자가 아닙니다.');
+
+    // DB에서 참가자 제거 & 남은 인원 수 계산
+    const { remaining } = await this.rooms.removeParticipant(roomId, profileId);
+
+    // 소켓 룸에서 leave
+    await this.gateway.leaveProfileFromRoom(profileId, roomId);
+
+    // 남은 인원 수가 0이면 방/메시지 삭제
+    if (remaining === 0) {
+      const { roomDeleted, deletedMessageCount } = await this.rooms.deleteRoomAndMessages(roomId);
+
+      return {
+        message: '퇴장 완료(방 삭제)',
+        roomId,
+        remainingParticipants: 0,
+        roomDeleted: roomDeleted, // true
+        deleted: {
+          room: roomDeleted,
+          message: deletedMessageCount,
+        },
+      };
+    }
+
+    // 남아있으면 정상 퇴장만 응답
+    return {
+      message: '퇴장 완료',
+      roomId,
+      remainingParticipants: remaining,
+      roomDeleted: false,
+    };
+  }
 }

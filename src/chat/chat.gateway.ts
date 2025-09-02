@@ -96,6 +96,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { joined: true as const };
   }
 
+  // SocketRoom에서 사용자(Profile)를 떠나게 하는 메서드
+  async leaveProfileFromRoom(profileId: string, roomId: string) {
+    const userLabel = `user:${profileId}`;
+    const chatLabel = `room:${roomId}`;
+    // userRoom에 있는 소켓(=해당 사용자 소켓)을 chatRoom에서 이탈
+    await this.server.in(userLabel).socketsLeave(chatLabel);
+  }
+
   // socket room 에 대한 멤버 조회 -> socketId, profileId 반환
   async getRoomMembers(roomId: string) {
     const roomLabel = roomId.includes(':') ? roomId : `room:${roomId}`;

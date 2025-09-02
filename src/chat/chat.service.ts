@@ -164,4 +164,49 @@ export class ChatService {
     return this.chatRoomModel.findOne({ roomId }).exec(); // .exec()을 붙여서 확실히 Promise 리턴
   }
 
+  async removeParticipant(roomId: string, profileId: string) {
+    const updated = await this.chatRoomModel
+      .findOneAndUpdate(
+        { roomId, [`participants.${profileId}`]: true },
+        { $unset: { [`participants.${profileId}`]: '' } },
+        { new: true }, // 변경 후 문서 반환
+      )
+      .exec();
+
+    if (!updated) {
+      throw new NotFoundException('참가자가 없거나 방이 존재하지 않습니다.');
+    }
+
+    // 남은 인원 수 계산
+    const remaining = updated.participants ? updated.participants.size : 0;
+    return { remaining, room: updated };
+  }
+
+  // 방 & 메시지 삭제
+  async deleteRoomAndMessages(roomId: string) {
+    const deletedRoom = await this.chatRoomModel
+      .findOneAndDelete({
+        roomId,
+        $expr: {
+          $eq: [
+            { $size: { $objectToArray: '$participants' } }, // Map -> 배열 -> size
+            0,
+          ],
+        },
+      })
+      .lean(); // 삭제된 문서 반환
+
+    if (!deletedRoom) {
+      // 이미 누가 지웠거나, 참가자가 아직 남아있는 상태
+      return { roomDeleted: false, deletedMessageCount: 0 };
+    }
+
+    // 방이 삭제되었으니 메시지도 일괄 삭제
+    const delMsg = await this.chatMessageModel.deleteMany({ roomId }).exec();
+
+    return {
+      roomDeleted: true,
+      deletedMessageCount: delMsg.deletedCount ?? 0,
+    };
+  }
 }
