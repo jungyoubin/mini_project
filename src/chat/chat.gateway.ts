@@ -60,19 +60,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const roomIds = await this.chatService.findRoomIdsByMember(profileId); // DB에서 사용자가 들어간 채팅방 ID 가져오기
       roomIds.forEach((roomId) => client.join(`room:${roomId}`)); // 가져온 각각의 roomId에 대해서 join 하기
 
-      // < 테스트용 코드 > socket연결했을때 접속하였던 방들에 대해서 다시 join 하는지 확인하는 코드
+      // socket연결했을때 접속하였던 방들에 대해서 다시 join 하는지 확인하는 코드
       this.logger.log(`auto rejoined rooms for ${profileId}: ${roomIds.join(', ')}`);
 
-      // local에서 확인하는 코드
+      // < local에서 테스트 하는 코드 >
       client.emit('rooms/rejoined', { rooms: roomIds.map((id) => `room:${id}`) });
     } catch (e) {
       this.logger.warn(`auto rejoin failed: ${e?.message}`);
     }
 
-    // < 테스트용 코드 > 연결되면 socketId가 출력됨
+    // 연결되면 socketId가 출력됨
     this.logger.log(`connected: profile=${profileId}, socket=${client.id}`); // client.id = socketId
 
-    // local에서 확인하는 코드(socketId를 잘 받아왔는지)
+    // < local에서 테스트 하는 코드(socketId를 잘 받아왔는지) >
     client.emit('socket/registered', { socketId: client.id });
   }
 
