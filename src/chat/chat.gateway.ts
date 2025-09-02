@@ -63,7 +63,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // socket연결했을때 접속하였던 방들에 대해서 다시 join 하는지 확인하는 코드
       this.logger.log(`auto rejoined rooms for ${profileId}: ${roomIds.join(', ')}`);
 
-      // < local에서 테스트 하는 코드 >
+      // < 테스트용 코드 > 방 자동 재접속을 하였을때, 방들에 Socket이 잘 들어갔는지 확인하는 코드
       client.emit('rooms/rejoined', { rooms: roomIds.map((id) => `room:${id}`) });
     } catch (e) {
       this.logger.warn(`auto rejoin failed: ${e?.message}`);
@@ -72,7 +72,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 연결되면 socketId가 출력됨
     this.logger.log(`connected: profile=${profileId}, socket=${client.id}`); // client.id = socketId
 
-    // < local에서 테스트 하는 코드(socketId를 잘 받아왔는지) >
+    // < 테스트용 코드 > 소켓 서버에 연결 하였을때, 소켓 아이디를 잘 받아왔는지 확인하는 코드
     client.emit('socket/registered', { socketId: client.id });
   }
 
