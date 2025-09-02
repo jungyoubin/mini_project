@@ -92,8 +92,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // 합류된 소켓들에게 알림
     this.server.to(userLabel).emit('room/joined', { roomId });
-
-    return { joined: true as const };
   }
 
   // SocketRoom에서 사용자(Profile)를 떠나게 하는 메서드

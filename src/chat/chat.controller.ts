@@ -8,6 +8,7 @@ import {
   Param,
   Get,
   Delete,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -15,20 +16,26 @@ import { JwtAuthGuard } from '../common/guards/jwt.guard';
 import { ChatGateway } from './chat.gateway';
 import { ReqUser } from '../common/decorators/user.decorator';
 import { JwtPayloadDto } from 'src/common/payload/jwt-dto';
+import { UserService } from 'src/user/user.service';
 
 @Controller('chat')
 export class ChatController {
   constructor(
     private readonly chatService: ChatService,
     private readonly chatGateway: ChatGateway, // socket
+    private readonly userService: UserService,
   ) {}
 
   // 방 생성
   @UseGuards(JwtAuthGuard)
   @Post('room')
   async create(@ReqUser() user: JwtPayloadDto, @Body() dto: CreateRoomDto) {
-    const profileId: string | undefined = user.sub;
-    if (!profileId) throw new BadRequestException('사용자 payload 문제 이슈');
+    const profileId = user.sub;
+
+    const exists = await this.userService.findByProfileId(profileId);
+    if (!exists) {
+      throw new UnauthorizedException('유효하지 않는 사용자');
+    }
 
     // 방 생성
     const room = await this.chatService.createRoom(profileId, dto.roomTitle);
@@ -63,8 +70,11 @@ export class ChatController {
   @UseGuards(JwtAuthGuard)
   @Post('room/:roomId/join')
   async join(@ReqUser() user: JwtPayloadDto, @Param('roomId') roomId: string) {
-    const profileId: string | undefined = user.sub;
-    if (!profileId) throw new BadRequestException('Invalid user payload');
+    const profileId = user.sub;
+    const exists = await this.userService.findByProfileId(profileId);
+    if (!exists) {
+      throw new UnauthorizedException('유효하지 않는 사용자');
+    }
 
     // 방 있는지 확인하기
     const room = await this.chatService.findRoomById(roomId);
@@ -82,7 +92,6 @@ export class ChatController {
     return {
       roomId,
       alreadyParticipant: already, // true면 기존 멤버였음, false는 신규 입장
-      joined: true, // 들어가졌는지 확인
     };
   }
 
@@ -91,8 +100,10 @@ export class ChatController {
   @Get('rooms')
   async getRooms(@ReqUser() user: JwtPayloadDto) {
     const profileId = user.sub;
-    if (!profileId) throw new BadRequestException('Invalid user payload');
-    return this.chatService.listAllRooms(profileId);
+    const exists = await this.userService.findByProfileId(profileId);
+    if (!exists) {
+      throw new UnauthorizedException('유효하지 않는 사용자');
+    }
   }
 
   // 내가 들어간 채팅방만 가져오기
@@ -100,8 +111,10 @@ export class ChatController {
   @Get('/myrooms')
   async getMyRooms(@ReqUser() user: JwtPayloadDto) {
     const profileId = user.sub;
-    if (!profileId) throw new BadRequestException('Invalid user payload');
-    return this.chatService.listMyRooms(profileId);
+    const exists = await this.userService.findByProfileId(profileId);
+    if (!exists) {
+      throw new UnauthorizedException('유효하지 않는 사용자');
+    }
   }
 
   // 방 나가기
@@ -109,8 +122,10 @@ export class ChatController {
   @Delete(':roomId')
   async leaveRoom(@ReqUser() user: JwtPayloadDto, @Param('roomId') roomId: string) {
     const profileId = user.sub;
-    if (!profileId) throw new BadRequestException('Invalid user payload');
-
+    const exists = await this.userService.findByProfileId(profileId);
+    if (!exists) {
+      throw new UnauthorizedException('유효하지 않는 사용자');
+    }
     // 방 존재 확인
     const room = await this.chatService.findRoomById(roomId);
     if (!room) throw new NotFoundException('room not found');
