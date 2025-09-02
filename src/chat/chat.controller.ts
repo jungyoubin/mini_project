@@ -54,7 +54,6 @@ export class ChatController {
   @UseGuards(JwtAuthGuard)
   @Get('room/:roomId/members')
   async members(@Param('roomId') roomId: string) {
-    const decoded = decodeURIComponent(roomId); // URI 디코딩
-    return this.gateway.getRoomMembers(decoded);
+    return this.gateway.getRoomMembers(roomId);
   }
 }

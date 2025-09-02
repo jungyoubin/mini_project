@@ -12,10 +12,7 @@ import { ChatRoom, ChatRoomSchema } from './schemas/chat-room.schema';
   imports: [
     ConfigModule,
     JwtModule.register({}),
-    MongooseModule.forFeature([
-      { name: ChatRoom.name, schema: ChatRoomSchema },
-      // { name: Message.name, schema: MessageSchema },
-    ]),
+    MongooseModule.forFeature([{ name: ChatRoom.name, schema: ChatRoomSchema }]),
   ],
   controllers: [ChatController],
   providers: [ChatGateway, ChatService, JwtAuthGuard], // 해당 모듈에서 사용할 서비스

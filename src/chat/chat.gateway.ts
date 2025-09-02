@@ -30,7 +30,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Namespace; // 현재의 네임스페이스(/chat)의 socket.io
   private readonly logger = new Logger(ChatGateway.name);
 
-  // JWT, Config, RoomService 주입 받기
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -61,31 +60,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const roomIds = await this.chatService.findRoomIdsByMember(profileId); // DB에서 사용자가 들어간 채팅방 ID 가져오기
       roomIds.forEach((chatId) => client.join(`room:${chatId}`)); // 가져온 각각의 chatId에 대해서 join 하기
 
-      // socket연결했을때 방들 다시 join 하는지 확인하는 코드(필요없으면 지우기 아래 2줄)
+      // < 테스트용 코드 > socket연결했을때 접속하였던 방들에 대해서 다시 join 하는지 확인하는 코드
       this.logger.log(`auto rejoined rooms for ${profileId}: ${roomIds.join(', ')}`);
+
+      // local에서 확인하는 코드
       client.emit('rooms/rejoined', { rooms: roomIds.map((id) => `room:${id}`) });
     } catch (e) {
       this.logger.warn(`auto rejoin failed: ${e?.message}`);
     }
 
-    // 클라이언트 디버깅 확인용 -> 연결되면 socketId가 출력됨
+    // < 테스트용 코드 > 연결되면 socketId가 출력됨
     this.logger.log(`connected: profile=${profileId}, socket=${client.id}`); // client.id = socketId
+
+    // local에서 확인하는 코드(socketId를 잘 받아왔는지)
     client.emit('socket/registered', { socketId: client.id });
   }
 
-  ////////// 추후 필요하면 진행하기 ////////////
   async handleDisconnect(client: Socket) {
     this.logger.log(`disconnected: socket=${client.id}`);
   }
 
-  // 테스트용 에코 이벤트(debuging)
-  @SubscribeMessage('ping')
-  handlePing(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
-    client.emit('pong', { at: Date.now(), echo: data });
-  }
-
   // socket room join -> 유저의 소켓을 해당 채팅룸으로 join 하기
-  // /chat/room/join 또는 /chat/room(방 생성) 에서 호출
+  // /chat/room/join 또는 /chat/room(방 생성) 에서 호출(사용된다)
   async joinProfileToRoom(profileId: string, roomId: string) {
     const userLabel = `user:${profileId}`;
     const roomLabel = `room:${roomId}`;
