@@ -45,7 +45,7 @@ export class ChatController {
     return {
       roomId: room.roomId,
       roomTitle: room.roomTitle,
-      creatorProfileId: profileId,
+      roomDate: room.roomDate,
       participants,
     };
   }
