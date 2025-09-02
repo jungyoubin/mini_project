@@ -45,42 +45,42 @@ export class UserService {
   }
 
   async register(dto: CreateUserDto) {
-    const exists = await this.findByUserId(dto.user_id);
+    const exists = await this.findByUserId(dto.userId);
     if (exists) {
       throw new HttpException('해당 아이디는 이미 사용중입니다.', HttpStatus.BAD_REQUEST);
     }
-    const sanitizedPhone = dto.user_phone.replace(/-/g, '');
-    const newUser = this.repo.create({ ...dto, user_phone: sanitizedPhone });
+    const sanitizedPhone = dto.userPhone.replace(/-/g, '');
+    const newUser = this.repo.create({ ...dto, userPhone: sanitizedPhone });
     const saved = await this.repo.save(newUser);
-    const { user_pw, ...safe } = saved;
+    const { userPw, ...safe } = saved;
     return safe;
   }
 
   // login 이동
   async login(loginDto: LoginUserDto) {
-    const user = await this.findByUserId(loginDto.user_id);
+    const user = await this.findByUserId(loginDto.userId);
     if (!user) throw new UnauthorizedException('존재하지 않는 사용자입니다.');
 
-    const ok = await user.checkPassword(loginDto.user_pw);
+    const ok = await user.checkPassword(loginDto.userPw);
     if (!ok) throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
 
     const accessTTL = this.configService.get<string>('jwt.accessTTL', '1h');
     const refreshTTL = this.configService.get<string>('jwt.refreshTTL', '7d');
 
-    const payload = { sub: user.profile_id, user_name: user.user_name };
+    const payload = { sub: user.profileId, userName: user.userName };
 
     const accessToken = this.jwtService.sign(payload, { expiresIn: accessTTL });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: refreshTTL });
 
-    const key = `rt:${user.profile_id}`;
+    const key = `rt:${user.profileId}`;
     const refreshSec = this.parseTTLToSeconds(refreshTTL, 7 * 24 * 60 * 60);
     await this.redis.set(key, this.sha256(refreshToken), 'EX', refreshSec);
 
     return {
       message: '로그인 성공',
-      profile: user.profile_id,
-      user_id: user.user_id,
-      user_name: user.user_name,
+      profileId: user.profileId,
+      userId: user.userId,
+      userName: user.userName,
       accessToken,
       refreshToken,
     };
@@ -92,12 +92,12 @@ export class UserService {
     return { message: '로그아웃 완료' };
   }
 
-  async findByUserId(user_id: string) {
-    return this.repo.findOne({ where: { user_id } });
+  async findByUserId(userId: string) {
+    return this.repo.findOne({ where: { userId } });
   }
 
-  async findByProfileId(profile_id: string) {
-    return this.repo.findOne({ where: { profile_id } });
+  async findByProfileId(profileId: string) {
+    return this.repo.findOne({ where: { profileId } });
   }
 
   // 전체 조회
@@ -106,17 +106,17 @@ export class UserService {
   }
 
   // 수정(name, email, phone만 가능)
-  async updateUser(profile_id: string, dto: UpdateUserDto): Promise<User> {
-    const user = await this.repo.findOne({ where: { profile_id } });
+  async updateUser(profileId: string, dto: UpdateUserDto): Promise<User> {
+    const user = await this.repo.findOne({ where: { profileId } });
     if (!user) throw new NotFoundException('해당 유저를 찾을 수 없습니다.');
 
-    const { user_name, user_email } = dto;
-    const user_phone = dto.user_phone ? dto.user_phone.replace(/-/g, '') : undefined;
+    const { userName, userEmail } = dto;
+    const userPhone = dto.userPhone ? dto.userPhone.replace(/-/g, '') : undefined;
 
     // 허용된 필드만 반영
-    if (user_name !== undefined) user.user_name = user_name;
-    if (user_email !== undefined) user.user_email = user_email;
-    if (user_phone !== undefined) user.user_phone = user_phone;
+    if (userName !== undefined) user.userName = userName;
+    if (userEmail !== undefined) user.userEmail = userEmail;
+    if (userPhone !== undefined) user.userPhone = userPhone;
 
     return this.repo.save(user);
   }

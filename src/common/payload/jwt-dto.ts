@@ -1,5 +1,5 @@
 export class JwtPayloadDto {
-  sub: string; // sub = profile_id
+  sub: string; // sub = profileId
   iat?: number; // 발급 시간
   exp?: number; // 만료 시간
 }
