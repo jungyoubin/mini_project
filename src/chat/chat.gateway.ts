@@ -45,7 +45,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // socket 연결되면 실행
   async handleConnection(client: Socket) {
-    const profileId: string | undefined = client.data?.user?.sub; // 핸드셰이크 미들웨이가 넣어준 client.data.uesr에서 sub(profileId)추출하기
+    const profileId: string | undefined = client.data?.user?.sub; // 핸드셰이크 미들웨이가 넣어준 client.data.user에서 sub(profileId)추출하기
 
     if (!profileId) {
       client.disconnect(true);
@@ -107,7 +107,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const members = sockets.map((s) => ({
       socketId: s.id,
-      profileId: s.data.user.sub as string | undefined,
+      profileId: s.data?.user?.sub,
     }));
 
     return { roomId, count: members.length, members };
