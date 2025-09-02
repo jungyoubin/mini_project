@@ -18,7 +18,7 @@ import { wsHandshakeAuth } from '../common/guards/ws-handshake-auth';
 /*
 socketId를 Redis에 저장하지 않고 user:{profileId}에 Join 하기
 사용자가 속한 방은 재 Join 진행하기(새로고침으로 socketId 바뀌어도 복구하기)
-메시지는 room:{chatId}로 진행
+메시지는 room:{roomId}로 진행
 */
 @WebSocketGateway({
   namespace: 'chat', // /chat 로 접속 -> postman에서 localhost:3000/chat
@@ -32,15 +32,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // JWT, Config, RoomService 주입 받기
   constructor(
-    private readonly jwt: JwtService,
-    private readonly config: ConfigService,
-    private readonly roomsService: ChatService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly chatService: ChatService,
   ) {}
 
   // handshake 미들웨어
   afterInit(server: Namespace) {
     this.server = server;
-    server.use(wsHandshakeAuth(this.jwt, this.config)); // socket.io를 미들웨어로 등록하기(handshake에서 토큰 검증) -> 성공하면 client.data.user에 payload 주입
+    server.use(wsHandshakeAuth(this.jwtService, this.configService)); // socket.io를 미들웨어로 등록하기(handshake에서 토큰 검증) -> 성공하면 client.data.user에 payload 주입
   }
 
   // socket 연결되면 실행
@@ -58,7 +58,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // 자동 재조인하기 -> profileId로 DB조회 하고 room:{roomId}에 자동 조인시키기
     try {
-      const roomIds = await this.roomsService.findRoomIdsByMember(profileId); // DB에서 사용자가 들어간 채팅방 ID 가져오기
+      const roomIds = await this.chatService.findRoomIdsByMember(profileId); // DB에서 사용자가 들어간 채팅방 ID 가져오기
       roomIds.forEach((chatId) => client.join(`room:${chatId}`)); // 가져온 각각의 chatId에 대해서 join 하기
 
       // socket연결했을때 방들 다시 join 하는지 확인하는 코드(필요없으면 지우기 아래 2줄)
