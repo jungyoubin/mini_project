@@ -32,4 +32,5 @@ export class ChatRoom {
 export const ChatRoomSchema = SchemaFactory.createForClass(ChatRoom);
 
 ChatRoomSchema.index({ 'participants.$**': 1 });
+
 ChatRoomSchema.index({ roomId: 1 }, { unique: true });

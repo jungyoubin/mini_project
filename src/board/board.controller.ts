@@ -64,6 +64,7 @@ export class BoardController {
     @Body() dto: ModifyBoardDto, // 요청 바디 -> DTO 검증/ 변환
   ) {
     const writerProfileId: string = user.sub;
+
     return this.boardService.modify(boardId, dto, writerProfileId);
   }
 }

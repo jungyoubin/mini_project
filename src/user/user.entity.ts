@@ -10,6 +10,7 @@ export class User {
   @Column({ type: 'varchar', length: 20, nullable: false, name: 'user_id' })
   userId: string;
 
+
   @Column({ type: 'varchar', length: 255, nullable: false, name: 'user_pw' })
   userPw: string;
 
