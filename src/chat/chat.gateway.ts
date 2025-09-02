@@ -8,7 +8,6 @@ import { UseGuards, Logger } from '@nestjs/common';
 import { Socket, Namespace } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { JwtAuthGuard } from '../common/guards/jwt.guard';
 import { ChatService } from './chat.service';
 import { wsHandshakeAuth } from '../common/guards/ws-handshake-auth';
 import { SendMessageDto } from './dto/send-message.dto';
@@ -24,7 +23,6 @@ socketId를 Redis에 저장하지 않고 user:{profileId}에 Join 하기
   cors: { origin: true },
   path: '/socket.io',
 })
-@UseGuards(JwtAuthGuard)
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Namespace; // 현재의 네임스페이스(/chat)의 socket.io
   private readonly logger = new Logger(ChatGateway.name);
@@ -60,27 +58,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const roomIds = await this.roomsService.findRoomIdsByMember(profileId); // DB에서 사용자가 들어간 채팅방 ID 가져오기
       roomIds.forEach((chatId) => client.join(`room:${chatId}`)); // 가져온 각각의 chatId에 대해서 join 하기
 
-      // socket연결했을때 방들 다시 join 하는지 확인하는 코드(필요없으면 지우기 아래 2줄)
+      // 접속하였던 방들에대해서 rejoin이 출력
       this.logger.log(`auto rejoined rooms for ${profileId}: ${roomIds.join(', ')}`);
+
+      // < 테스트용 코드 > 방 자동 재접속을 하였을 때, 방들에 Socket이 잘 들어갔는지 확인하는 코드
       client.emit('rooms/rejoined', { rooms: roomIds.map((id) => `room:${id}`) });
     } catch (e) {
       this.logger.warn(`auto rejoin failed: ${e?.message}`);
     }
 
-    // 클라이언트 디버깅 확인용 -> 연결되면 socketId가 출력됨
+    // 연결되면 socketId가 출력
     this.logger.log(`connected: profile=${profileId}, socket=${client.id}`); // client.id = socketId
+
+    // < 테스트용 코드 > 소켓 서버에 연결 하였을때, 소켓 아이디를 잘 받아왔는지 확인하는 코드
     client.emit('socket/registered', { socketId: client.id });
   }
 
   ////////// 추후 필요하면 진행하기 ////////////
   async handleDisconnect(client: Socket) {
     this.logger.log(`disconnected: socket=${client.id}`);
-  }
-
-  // 테스트용 에코 이벤트(debuging)
-  @SubscribeMessage('ping')
-  handlePing(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
-    client.emit('pong', { at: Date.now(), echo: data });
   }
 
   // socket room join -> 유저의 소켓을 해당 채팅룸으로 join 하기
@@ -119,7 +115,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   // 메시지 전송 : DB 저장 -> 방 전체(본인 포함) 브로드캐스트 진행하기
-  @SubscribeMessage('message/send')
+  @SubscribeMessage('sendMessage')
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() dto: SendMessageDto, // { roomId, chatMessage } (DTO 검증/변환 적용)
@@ -132,7 +128,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const saved = await this.roomsService.sendMessage(roomId, profileId, chatMessage);
 
-    this.server.to(roomLabel).emit('message/new', {
+    this.server.to(roomLabel).emit('sendMessage', {
       roomId: saved.roomId,
       messageId: saved.messageId,
       profileId: saved.profileId,
@@ -145,12 +141,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('message/history')
   async handleHistory(
     @ConnectedSocket() client: Socket,
-    @MessageBody('roomId') roomId: string, // whitelist로 지워지는 것 방지
+    // @MessageBody('roomId') roomId: string, // whitelist로 지워지는 것 방지
     @MessageBody() page: MessageHistoryDto, // { cursor?, limit? }만 검증/변환
   ) {
     const profileId: string | undefined = client.data?.user?.sub;
     if (!profileId) return;
 
+    const roomId = page.roomId;
     const limit = page.limit ?? 50; //  기본 50 (1 ~ 200 설정)
     const cursorDate = page.cursor ? new Date(page.cursor) : undefined;
 
