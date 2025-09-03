@@ -12,6 +12,7 @@ import { ChatService } from './chat.service';
 import { wsHandshakeAuth } from '../common/guards/ws-handshake-auth';
 import { SendMessageDto } from './dto/send-message.dto';
 import { MessageHistoryDto } from './dto/message-history.dto';
+import { UserService } from 'src/user/user.service';
 
 /*
 socketId를 Redis에 저장하지 않고 user:{profileId}에 Join 하기
@@ -32,6 +33,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly roomsService: ChatService,
+    private readonly userService: UserService,
   ) {}
 
   // handshake 미들웨어
@@ -126,12 +128,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { roomId, chatMessage } = dto;
     const roomLabel = `room:${roomId}`;
 
+    /*
+    최초 1회만 조회 소켓에 캐시
+    사용자가 이름을 수정하여도 socket이 살아 있다면 그대로 반영
+    소켓을 재연결 하였을때 DB 조회
+    */
+
+    let userName = client.data?.userName;
+    if (!userName) {
+      try {
+        userName = await this.userService.findName(profileId);
+        if (userName) client.data.userName = userName; // 조회한 값은 소켓 캐시에 넣기
+      } catch (e) {
+        this.logger.warn(`사용자이름 읽기 실패: ${e?.message}`);
+      }
+    }
+
     const saved = await this.roomsService.sendMessage(roomId, profileId, chatMessage);
 
     this.server.to(roomLabel).emit('sendMessage', {
       roomId: saved.roomId,
       messageId: saved.messageId,
       profileId: saved.profileId,
+      userName,
       messageContent: saved.messageContent,
       messageDate: saved.messageDate,
     });
