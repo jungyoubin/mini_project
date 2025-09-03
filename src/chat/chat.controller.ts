@@ -4,11 +4,9 @@ import {
   Post,
   UseGuards,
   BadRequestException,
-  NotFoundException,
   Param,
   Get,
   Delete,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -23,7 +21,6 @@ export class ChatController {
   constructor(
     private readonly chatService: ChatService,
     private readonly chatGateway: ChatGateway, // socket
-    private readonly userService: UserService,
   ) {}
 
   // 방 생성

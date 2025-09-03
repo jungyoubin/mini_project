@@ -193,7 +193,7 @@ export class ChatService {
     }
 
     // 남은 인원 수 계산
-    const remaining = updated.participants ? updated.participants.size : 0;
+    const remaining = updated.participants.size;
     return { remaining, room: updated };
   }
 
@@ -225,6 +225,7 @@ export class ChatService {
     };
   }
 
+  // 방을 생성하고 자동으로 들어가기
   async createAndJoinRoom(profileId: string, roomTitle: string) {
     const exists = await this.userService.findByProfileId(profileId);
     if (!exists) throw new UnauthorizedException('유효하지 않는 사용자');
