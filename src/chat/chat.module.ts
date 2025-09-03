@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
+import { UserModule } from '../user/user.module';
 import { ChatController } from './chat.controller';
 import { JwtAuthGuard } from '../common/guards/jwt.guard';
 import { JwtModule } from '@nestjs/jwt';
@@ -17,6 +18,7 @@ import { ChatMessage, ChatMessageSchema } from './schemas/chat-message.schema';
       { name: ChatRoom.name, schema: ChatRoomSchema },
       { name: ChatMessage.name, schema: ChatMessageSchema },
     ]),
+    UserModule,
   ],
   controllers: [ChatController],
   providers: [ChatGateway, ChatService, JwtAuthGuard], // 해당 모듈에서 사용할 서비스
