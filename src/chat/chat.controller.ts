@@ -69,7 +69,7 @@ export class ChatController {
     return this.chatService.leaveRoom(user.sub, roomId);
   }
 
-  @UseGuards(JwtAuthGuard) // 인증이 불필요하면 이 줄 삭제
+  @UseGuards(JwtAuthGuard)
   @Get('room/:roomId/message')
   async listRoomMessages(
     @Param('roomId') roomId: string,
