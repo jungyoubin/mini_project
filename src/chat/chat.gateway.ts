@@ -4,7 +4,7 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { UseGuards, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { Socket, Namespace } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -58,7 +58,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 자동 재조인하기 -> profileId로 DB조회 하고 room:{roomId}에 자동 조인시키기
     try {
       const roomIds = await this.roomsService.findRoomIdsByMember(profileId); // DB에서 사용자가 들어간 채팅방 ID 가져오기
-      roomIds.forEach((chatId) => client.join(`room:${chatId}`)); // 가져온 각각의 chatId에 대해서 join 하기
+      roomIds.forEach((roomId) => client.join(`room:${roomId}`)); // 가져온 각각의 roomId에 대해서 join 하기
 
       // 접속하였던 방들에대해서 rejoin이 출력
       this.logger.log(`auto rejoined rooms for ${profileId}: ${roomIds.join(', ')}`);
@@ -170,7 +170,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const limit = page.limit ?? 50; //  기본 50 (1 ~ 200 설정)
     const cursorDate = page.cursor ? new Date(page.cursor) : undefined;
 
-    // (옵션) 멤버만 접근 허용
+    // 멤버만 접근 허용
     const isMember = await this.roomsService.isParticipant(roomId, profileId);
     if (!isMember) {
       client.emit('message/error', { roomId, code: 'NOT_MEMBER' });
