@@ -1,9 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, PipelineStage } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 import { ChatRoom, ChatRoomDocument } from './schemas/chat-room.schema';
 import { ChatMessage, ChatMessageDocument } from './schemas/chat-message.schema';
+import { UserService } from 'src/user/user.service';
+import { ChatGateway } from './chat.gateway';
 
 type RoomListItem = {
   roomId: string;
@@ -22,6 +30,10 @@ export class ChatService {
 
     @InjectModel(ChatMessage.name)
     private readonly chatMessageModel: Model<ChatMessageDocument>,
+    private readonly userService: UserService,
+
+    @Inject(forwardRef(() => ChatGateway))
+    private readonly chatGateway: ChatGateway, // Socket 조작
   ) {}
 
   // 방 생성하기
@@ -210,6 +222,78 @@ export class ChatService {
     return {
       roomDeleted: true,
       deletedMessageCount: delMsg.deletedCount ?? 0,
+    };
+  }
+
+  async createAndJoinRoom(profileId: string, roomTitle: string) {
+    const exists = await this.userService.findByProfileId(profileId);
+    if (!exists) throw new UnauthorizedException('유효하지 않는 사용자');
+
+    const created = await this.createRoom(profileId, roomTitle);
+    // 생성자 소켓을 room에 join
+    await this.chatGateway.joinProfileToRoom(profileId, created.roomId);
+
+    // 응답 형식
+    const participants = Object.keys(created.participantsMap ?? {}).map((profileId) => ({
+      profileId,
+    }));
+    return {
+      roomId: created.roomId,
+      roomTitle: created.roomTitle,
+      roomDate: created.roomDate,
+      participants,
+    };
+  }
+
+  // 방 입장(DB 참가자 반영 + 소켓 join)
+  async joinRoom(profileId: string, roomId: string) {
+    const exists = await this.userService.findByProfileId(profileId);
+    if (!exists) throw new UnauthorizedException('유효하지 않는 사용자');
+
+    // 방 있는지 확인하기
+    const room = await this.findRoomById(roomId);
+    if (!room) throw new NotFoundException('room not found');
+
+    // Participants 업데이트(있으면 패스)
+    const already = await this.isParticipant(roomId, profileId);
+    if (!already) await this.addParticipant(roomId, profileId);
+
+    // socket join
+    await this.chatGateway.joinProfileToRoom(profileId, roomId);
+
+    return { roomId, alreadyParticipant: already };
+  }
+
+  // 방 나가기
+  async leaveRoom(profileId: string, roomId: string) {
+    const exists = await this.userService.findByProfileId(profileId);
+    if (!exists) throw new UnauthorizedException('유효하지 않는 사용자');
+
+    const room = await this.findRoomById(roomId);
+    if (!room) throw new NotFoundException('room not found');
+
+    const isMember = await this.isParticipant(roomId, profileId);
+    if (!isMember) throw new NotFoundException('방 참여자가 아닙니다.');
+
+    const { remaining } = await this.removeParticipant(roomId, profileId);
+    await this.chatGateway.leaveProfileFromRoom(profileId, roomId);
+
+    if (remaining === 0) {
+      const { roomDeleted, deletedMessageCount } = await this.deleteRoomAndMessages(roomId);
+      return {
+        message: '퇴장 완료(방 삭제)',
+        roomId,
+        remainingParticipants: 0,
+        roomDeleted: roomDeleted,
+        deleted: { room: roomDeleted, message: deletedMessageCount },
+      };
+    }
+
+    return {
+      message: '퇴장 완료',
+      roomId,
+      remainingParticipants: remaining,
+      roomDeleted: false,
     };
   }
 }
