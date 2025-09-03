@@ -88,6 +88,7 @@ export class ChatService {
   없으면 false, 있으면 true 
   */
 
+  // 전체 채팅방
   async listAllRooms(profileId: string): Promise<RoomListItem[]> {
     const pipeline: PipelineStage[] = [
       // 파이프라인 타입 명시
@@ -114,6 +115,7 @@ export class ChatService {
             },
           },
           enterStatus: {
+            // 들어가있는 상태인지 확인
             $in: [
               profileId,
               {
@@ -133,6 +135,7 @@ export class ChatService {
     return this.chatRoomModel.aggregate<RoomListItem>(pipeline).exec();
   }
 
+  // 내가 들어간 채팅방
   async listMyRooms(profileId: string): Promise<RoomListItem[]> {
     const pipeline: PipelineStage[] = [
       { $match: { [`participants.${profileId}`]: true } }, // 인덱스 활용

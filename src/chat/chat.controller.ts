@@ -67,7 +67,7 @@ export class ChatController {
 
   // 방 들어가기
   @UseGuards(JwtAuthGuard)
-  @Post('room/:roomId/join')
+  @Post('/:roomId')
   async join(@ReqUser() user: JwtPayloadDto, @Param('roomId') roomId: string) {
     const profileId = user.sub;
     const exists = await this.userService.findByProfileId(profileId);
@@ -98,20 +98,18 @@ export class ChatController {
   @UseGuards(JwtAuthGuard)
   @Get('rooms')
   async getRooms(@ReqUser() user: JwtPayloadDto) {
-    const exists = await this.userService.findByProfileId(user.sub);
-    if (!exists) {
-      throw new UnauthorizedException('유효하지 않는 사용자');
-    }
+    const profileId = user.sub;
+    if (!profileId) throw new BadRequestException('Invalid user payload');
+    return this.chatService.listAllRooms(profileId);
   }
 
   // 내가 들어간 채팅방만 가져오기
   @UseGuards(JwtAuthGuard)
   @Get('/myrooms')
   async getMyRooms(@ReqUser() user: JwtPayloadDto) {
-    const exists = await this.userService.findByProfileId(user.sub);
-    if (!exists) {
-      throw new UnauthorizedException('유효하지 않는 사용자');
-    }
+    const profileId = user.sub;
+    if (!profileId) throw new BadRequestException('Invalid user payload');
+    return this.chatService.listMyRooms(profileId);
   }
 
   // 방 나가기
