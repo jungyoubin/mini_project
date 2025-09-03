@@ -133,7 +133,7 @@ export class ChatService {
           },
         },
       },
-      { $sort: { roomDate: -1 as const } }, // -1을 literal 로 고정
+      { $sort: { roomDate: -1 } },
     ];
 
     return this.chatRoomModel.aggregate<RoomListItem>(pipeline).exec();

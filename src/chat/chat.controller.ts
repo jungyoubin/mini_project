@@ -52,14 +52,14 @@ export class ChatController {
 
   // Socket Room 멤버 목록 조회(잘 들어갔는지 확인용)
   @UseGuards(JwtAuthGuard)
-  @Get('room/:roomId/members')
+  @Get(':roomId/members')
   async members(@Param('roomId') roomId: string) {
     return this.gateway.getRoomMembers(roomId);
   }
 
   // 방 들어가기
   @UseGuards(JwtAuthGuard)
-  @Post('room/:roomId/join')
+  @Post(':roomId')
   async join(@ReqUser() user: JwtPayloadDto, @Param('roomId') roomId: string) {
     const profileId: string | undefined = user.sub;
     if (!profileId) throw new BadRequestException('Invalid user payload');
