@@ -14,7 +14,6 @@ import { JwtAuthGuard } from '../common/guards/jwt.guard';
 import { ChatGateway } from './chat.gateway';
 import { ReqUser } from '../common/decorators/user.decorator';
 import { JwtPayloadDto } from 'src/common/payload/jwt-dto';
-import { UserService } from 'src/user/user.service';
 
 @Controller('chat')
 export class ChatController {
