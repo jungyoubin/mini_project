@@ -298,4 +298,16 @@ export class ChatService {
       roomDeleted: false,
     };
   }
+
+  async sendMessage(roomId: string, profileId: string, messageContent: string) {
+    const now = new Date();
+    const doc = await this.chatMessageModel.create({
+      roomId,
+      messageId: uuidv7(),
+      profileId,
+      messageContent,
+      messageDate: now,
+    });
+    return doc.toObject();
+  }
 }
