@@ -19,7 +19,7 @@ import { UserService } from 'src/user/user.service';
 /*
 socketId를 Redis에 저장하지 않고 user:{profileId}에 Join 하기
 사용자가 속한 방은 재 Join 진행하기(새로고침으로 socketId 바뀌어도 복구하기)
-메시지는 room:{roomId}로 진행
+메시지는 room:{chatId}로 진행
 */
 @WebSocketGateway({
   namespace: 'chat', // /chat 로 접속 -> postman에서 localhost:3000/chat
@@ -30,6 +30,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Namespace; // 현재의 네임스페이스(/chat)의 socket.io
   private readonly logger = new Logger(ChatGateway.name);
 
+  // JWT, Config, RoomService 주입 받기
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -137,8 +138,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() dto: SendMessageDto, // { roomId, chatMessage } (DTO 검증/변환 적용)
   ) {
     const profileId: string = client.data?.user?.sub;
-    if (!profileId) return;
 
+    if (!profileId) return;
     const { roomId, chatMessage } = dto;
     const roomLabel = `room:${roomId}`;
 
@@ -157,7 +158,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.logger.warn(`사용자이름 읽기 실패: ${e?.message}`);
       }
     }
-
     const saved = await this.roomsService.sendMessage(roomId, profileId, chatMessage);
 
     this.server.to(roomLabel).emit('message:new', {

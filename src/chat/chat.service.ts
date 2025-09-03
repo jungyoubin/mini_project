@@ -148,7 +148,7 @@ export class ChatService {
     return this.chatRoomModel.aggregate<RoomListItem>(pipeline).exec();
   }
 
-  // 내가 들어간 채팅방
+  // 사용자가 들어간 방
   async listMyRooms(profileId: string): Promise<RoomListItem[]> {
     const pipeline: PipelineStage[] = [
       { $match: { [`participants.${profileId}`]: true } }, // 인덱스 활용
