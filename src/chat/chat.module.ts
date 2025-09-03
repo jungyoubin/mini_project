@@ -7,12 +7,18 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ChatRoom, ChatRoomSchema } from './schemas/chat-room.schema';
+import { ChatMessage, ChatMessageSchema } from './schemas/chat-message.schema';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
     ConfigModule,
     JwtModule.register({}),
-    MongooseModule.forFeature([{ name: ChatRoom.name, schema: ChatRoomSchema }]),
+    MongooseModule.forFeature([
+      { name: ChatRoom.name, schema: ChatRoomSchema },
+      { name: ChatMessage.name, schema: ChatMessageSchema },
+    ]),
+    UserModule,
   ],
   controllers: [ChatController],
   providers: [ChatGateway, ChatService, JwtAuthGuard], // 해당 모듈에서 사용할 서비스
