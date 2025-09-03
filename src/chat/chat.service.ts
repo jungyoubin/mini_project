@@ -297,4 +297,33 @@ export class ChatService {
       roomDeleted: false,
     };
   }
+
+  // 메시지 가져오기
+  async getRoomMessages(roomId: string, limit: number, cursor?: Date) {
+    const query: any = { roomId };
+    if (cursor) {
+      query.messageDate = { $lt: cursor }; // cursor 이전(과거)만
+    }
+
+    const rows = await this.chatMessageModel
+      .find(query)
+      .sort({ messageDate: -1 }) // 최신 → 과거
+      .limit(limit)
+      .lean()
+      .exec();
+
+    const messages = rows.map((r: any) => ({
+      roomId: r.roomId,
+      messageId: r.messageId,
+      profileId: r.profileId,
+      messageContent: r.messageContent,
+      messageDate: new Date(r.messageDate).toISOString(), // ISO 문자열로 통일
+    }));
+
+    const last = rows[rows.length - 1];
+    const nextCursor = last ? new Date(last.messageDate).toISOString() : null;
+    const hasMore = rows.length === limit;
+
+    return { roomId, messages, nextCursor, hasMore };
+  }
 }

@@ -7,6 +7,7 @@ import {
   Param,
   Get,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -66,5 +67,19 @@ export class ChatController {
   @Delete(':roomId')
   async leaveRoom(@ReqUser() user: JwtPayloadDto, @Param('roomId') roomId: string) {
     return this.chatService.leaveRoom(user.sub, roomId);
+  }
+
+  @UseGuards(JwtAuthGuard) // 인증이 불필요하면 이 줄 삭제
+  @Get('room/:roomId/message')
+  async listRoomMessages(
+    @Param('roomId') roomId: string,
+    @Query('limit') limits: string,
+    @Query('cursor') cursorQ: string,
+  ) {
+    const parsed = parseInt(limits ?? '50', 10);
+    const limit = isNaN(parsed) ? 50 : parsed;
+    const cursor = cursorQ ? new Date(cursorQ) : undefined; // 없으면 undefined
+
+    return this.chatService.getRoomMessages(roomId, limit, cursor);
   }
 }
