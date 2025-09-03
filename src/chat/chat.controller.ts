@@ -31,8 +31,7 @@ export class ChatController {
   @Post('room')
   async create(@ReqUser() user: JwtPayloadDto, @Body() dto: CreateRoomDto) {
     const profileId = user.sub;
-
-    const exists = await this.userService.findByProfileId(profileId);
+    const exists = await this.userService.findByProfileId(user.sub);
     if (!exists) {
       throw new UnauthorizedException('유효하지 않는 사용자');
     }
@@ -99,8 +98,7 @@ export class ChatController {
   @UseGuards(JwtAuthGuard)
   @Get('rooms')
   async getRooms(@ReqUser() user: JwtPayloadDto) {
-    const profileId = user.sub;
-    const exists = await this.userService.findByProfileId(profileId);
+    const exists = await this.userService.findByProfileId(user.sub);
     if (!exists) {
       throw new UnauthorizedException('유효하지 않는 사용자');
     }
@@ -110,8 +108,7 @@ export class ChatController {
   @UseGuards(JwtAuthGuard)
   @Get('/myrooms')
   async getMyRooms(@ReqUser() user: JwtPayloadDto) {
-    const profileId = user.sub;
-    const exists = await this.userService.findByProfileId(profileId);
+    const exists = await this.userService.findByProfileId(user.sub);
     if (!exists) {
       throw new UnauthorizedException('유효하지 않는 사용자');
     }
