@@ -8,6 +8,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, PipelineStage } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
+import { v7 as uuidv7 } from 'uuid';
 import { ChatRoom, ChatRoomDocument } from './schemas/chat-room.schema';
 import { ChatMessage, ChatMessageDocument } from './schemas/chat-message.schema';
 import { UserService } from 'src/user/user.service';
@@ -147,7 +148,7 @@ export class ChatService {
     return this.chatRoomModel.aggregate<RoomListItem>(pipeline).exec();
   }
 
-  // 내가 들어간 채팅방
+  // 사용자가 들어간 방
   async listMyRooms(profileId: string): Promise<RoomListItem[]> {
     const pipeline: PipelineStage[] = [
       { $match: { [`participants.${profileId}`]: true } }, // 인덱스 활용
@@ -296,5 +297,17 @@ export class ChatService {
       remainingParticipants: remaining,
       roomDeleted: false,
     };
+  }
+
+  async sendMessage(roomId: string, profileId: string, messageContent: string) {
+    const now = new Date();
+    const doc = await this.chatMessageModel.create({
+      roomId,
+      messageId: uuidv7(),
+      profileId,
+      messageContent,
+      messageDate: now,
+    });
+    return doc.toObject();
   }
 }
