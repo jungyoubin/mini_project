@@ -28,20 +28,18 @@ export class BoardService {
     const exists = await this.boardModel.exists({ boardId });
     if (!exists) throw new NotFoundException('게시글을 찾을 수 없습니다.');
 
-    // true면 안 함
+    const now = new Date();
     const key = `boardLikedPeople.${profileId}`;
-    const { modifiedCount } = await this.boardModel.updateOne(
-      { boardId, [key]: { $ne: true } }, // 이미 true면 매치 안 됨
-      { $set: { [key]: true } }, // 추가(또는 true로 세팅)
-    );
 
-    if (modifiedCount === 0) {
-      // 게시글은 존재하지만 이미 좋아요 상태
-      throw new BadRequestException('이미 좋아요를 눌렀습니다.');
-    }
+    await this.boardModel
+      .updateOne({ boardId }, { $set: { [key]: now } }, { upsert: false })
+      .exec();
 
-    // const likeCount = await this.countLikes(boardId); // 추후에 좋아요 개수
-    return { boardId, liked: true };
+    /*
+    추후 좋아요 개수 반환 기능이 추가되었을때 사용되는 코드
+    const likeCount = await this.countLikes(boardId);
+    */
+    return { boardId, likedAt: now };
   }
 
   // 좋아요 취소
@@ -51,37 +49,35 @@ export class BoardService {
     if (!exists) throw new NotFoundException('게시글을 찾을 수 없습니다.');
 
     const key = `boardLikedPeople.${profileId}`;
-    const { modifiedCount } = await this.boardModel.updateOne(
-      { boardId, [key]: { $exists: true } }, // 키 없으면 매치 안 됨
-      { $unset: { [key]: '' } }, // 보통적으로 '' 빈 값으로 쓴다고 함(ture로 써도 상관없음)
-    );
 
-    if (modifiedCount === 0) {
-      // 게시글은 존재하지만 좋아요를 누르지 않았던 상태
-      throw new BadRequestException('좋아요 상태가 아닙니다.');
-    }
+    // 상태와 무관하게 항상 unset
+    await this.boardModel.updateOne({ boardId }, { $unset: { [key]: '' } }).exec();
 
-    // 추후에 좋아요 수 필요하면 아래 주석 제거
-    // const likeCount = await this.countLikes(boardId);
-    return { boardId, liked: false };
+    /*
+    추후 좋아요 개수 반환 기능이 추가되었을때 사용되는 코드
+    const likeCount = await this.countLikes(boardId);
+    */
+    return { boardId };
   }
 
-  // 좋아요 수 집계하기 추후에 필요시 아래 주석 확인하기
-  // private async countLikes(boardId: string): Promise<number> {
-  //   const [doc] = await this.boardModel.aggregate<{ boardLikedCount: number }>([
-  //     { $match: { boardId } },
-  //     {
-  //       $addFields: {
-  //         boardLikedCount: {
-  //           $size: { $objectToArray: '$boardLikedPeople' }, // Map → array → size
-  //         },
-  //       },
-  //     },
-  //     { $project: { _id: 0, boardLikedCount: 1 } },
-  //   ]);
+  /* 
+  현재 좋아요 갯수에 대해서는 따로 언급되는 부분이 없지만, 
+  추후 좋아요 갯수에 대해서 기능 요청이 생길때 하기 코드 반영
+  
+  private async countLikes(boardId: string): Promise<number> {
+    const [doc] = await this.boardModel.aggregate<{ likeCount: number }>([
+      { $match: { boardId } },
+      {
+        $project: {
+          _id: 0,
+          likeCount: { $size: { $objectToArray: '$boardLikedPeople' } },
+        },
+      },
+    ]);
+    return doc?.likeCount ?? 0;
+  }
 
-  //   return doc?.boardLikedCount ?? 0;
-  // }
+  */
 
   // 게시판 삭제하기
   async remove(boardId: string, writerProfileId: string) {
