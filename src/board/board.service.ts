@@ -35,7 +35,7 @@ export class BoardService {
       .updateOne({ boardId }, { $set: { [key]: now } }, { upsert: false })
       .exec();
 
-    // 개수 반환
+    // 좋아요 개수 반환
     // const likeCount = await this.countLikes(boardId);
     return { boardId, likedAt: now };
   }
@@ -51,23 +51,29 @@ export class BoardService {
     // 상태와 무관하게 항상 unset
     await this.boardModel.updateOne({ boardId }, { $unset: { [key]: '' } }).exec();
 
+    // 좋아요 개수 반환
     // const likeCount = await this.countLikes(boardId);
     return { boardId };
   }
 
-  // 좋아요 수 집계하기 추후에 필요시 아래 주석 확인하기
-  // private async countLikes(boardId: string): Promise<number> {
-  //   const [doc] = await this.boardModel.aggregate<{ likeCount: number }>([
-  //     { $match: { boardId } },
-  //     {
-  //       $project: {
-  //         _id: 0,
-  //         likeCount: { $size: { $objectToArray: '$boardLikedPeople' } },
-  //       },
-  //     },
-  //   ]);
-  //   return doc?.likeCount ?? 0;
-  // }
+  /* 
+  현재 좋아요 갯수에 대해서는 따로 언급되는 부분이 없지만, 
+  추후 좋아요 갯수에 대해서 기능 요청이 생길때 하기 코드 반영
+  
+  private async countLikes(boardId: string): Promise<number> {
+    const [doc] = await this.boardModel.aggregate<{ likeCount: number }>([
+      { $match: { boardId } },
+      {
+        $project: {
+          _id: 0,
+          likeCount: { $size: { $objectToArray: '$boardLikedPeople' } },
+        },
+      },
+    ]);
+    return doc?.likeCount ?? 0;
+  }
+
+  */
 
   // 게시판 삭제하기
   async remove(boardId: string, writerProfileId: string) {
