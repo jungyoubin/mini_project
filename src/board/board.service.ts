@@ -104,14 +104,40 @@ export class BoardService {
   */
 
   // 전체 조회
-  async findAll() {
-    return (
-      this.boardModel
-        .find({}, { boardContent: 0 }) // boardContent : 0 으로 하여서 해당 내용은 안 가져오기
-        // .sort({ boardDate: -1 }) // 최신순으로 정렬이 필요하면 주석 제거하기
+  async findAll(limit = 20, cursorId?: string) {
+    let filter: any = {};
+
+    // cursorId가 있으면, 그 글의 날짜 기준으로 "더 과거"만
+    if (cursorId) {
+      const cur = await this.boardModel
+        .findOne({ boardId: cursorId })
+        .select({ boardDate: 1, _id: 0 })
         .lean()
-        .exec()
-    );
+        .exec();
+
+      if (cur) {
+        filter = {
+          $or: [
+            // 경계 안정화를 위해 (date < cursorDate) OR (date == cursorDate AND id < cursorId)
+            { boardDate: { $lt: cur.boardDate } },
+            { boardDate: cur.boardDate, boardId: { $lt: cursorId } },
+          ],
+        };
+      }
+    }
+
+    const rows = await this.boardModel
+      .find(filter, { boardContent: 0, _id: 0 }) // 내용 제외
+      .sort({ boardDate: -1, boardId: -1 }) // 최신 → 과거 (DATE만 정렬)
+      .limit(limit + 1) // hasMore 판별용 peek
+      .lean()
+      .exec();
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = items.length ? items[items.length - 1].boardId : null;
+
+    return { items, nextCursor, hasMore };
   }
 
   // 개별 조회
