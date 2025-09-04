@@ -150,13 +150,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userLabel = `user:${profileId}`;
     const roomLabel = `room:${roomId}`;
 
-    /*
-    userName에 대해서 socket 연결인 최초 1회만 조회 소켓에 캐시
-    사용자가 이름을 수정하여도 socket이 살아 있다면 그대로 반영
-    소켓을 재연결 하였을때 다시 DB 조회
-    */
-
     const sockets = await this.server.in(userLabel).fetchSockets();
+    if (sockets.length === 0) throw new Error('사용자의 살아있는 소켓이 없다');
+
     const userName = sockets[0].data.userName;
 
     const saved = await this.chatService.sendMessage(roomId, profileId, chatMessage);
