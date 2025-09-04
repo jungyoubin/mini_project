@@ -75,11 +75,8 @@ export class ChatController {
   @Get(':roomId/message')
   async listRoomMessages(
     @Param() { roomId }: HistoryMessageParamsDto,
-    @Query() query: HistoryMessageQueryDto,
+    @Query() { limit, offset }: HistoryMessageQueryDto,
   ) {
-    const limit = query.limit; // 1~200, 기본 50
-    const cursorDate = query.cursor ? new Date(query.cursor) : undefined;
-
-    return this.chatService.getRoomMessages(roomId, limit, cursorDate);
+    return this.chatService.getRoomMessages(roomId, limit, offset);
   }
 }

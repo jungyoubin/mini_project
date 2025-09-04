@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, Max, Min, IsISO8601, IsUUID } from 'class-validator';
+import { IsInt, IsOptional, Max, Min, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class HistoryMessageParamsDto {
@@ -15,8 +15,9 @@ export class HistoryMessageQueryDto {
   @Max(200)
   limit: number = 50;
 
-  // ISO8601 문자열(예: 2025-09-03T10:05:09.577Z)
   @IsOptional()
-  @IsISO8601()
-  cursor?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  offset: number = 0;
 }
