@@ -34,7 +34,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly roomsService: ChatService,
+    private readonly chatService: ChatService,
     private readonly userService: UserService,
   ) {}
 
@@ -46,7 +46,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // socket 연결되면 실행
   async handleConnection(client: Socket) {
-    const profileId: string | undefined = client.data?.user?.sub; // 핸드셰이크 미들웨이가 넣어준 client.data.uesr에서 sub(profileId)추출하기
+    const profileId: string | undefined = client.data?.user?.sub; // 핸드셰이크 미들웨이가 넣어준 client.data.user에서 sub(profileId)추출하기
 
     if (!profileId) {
       client.disconnect(true);
@@ -59,7 +59,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // 자동 재조인하기 -> profileId로 DB조회 하고 room:{roomId}에 자동 조인시키기
     try {
-      const roomIds = await this.roomsService.findRoomIdsByMember(profileId); // DB에서 사용자가 들어간 채팅방 ID 가져오기
+      const roomIds = await this.chatService.findRoomIdsByMember(profileId); // DB에서 사용자가 들어간 채팅방 ID 가져오기
       roomIds.forEach((roomId) => client.join(`room:${roomId}`)); // 가져온 각각의 roomId에 대해서 join 하기
 
       // 접속하였던 방들에대해서 rejoin이 출력
@@ -125,7 +125,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const members = sockets.map((s) => ({
       socketId: s.id,
-      profileId: s.data.user.sub as string | undefined,
+      profileId: s.data?.user?.sub,
     }));
 
     return { roomId, count: members.length, members };
@@ -158,7 +158,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.logger.warn(`사용자이름 읽기 실패: ${e?.message}`);
       }
     }
-    const saved = await this.roomsService.sendMessage(roomId, profileId, chatMessage);
+    const saved = await this.chatService.sendMessage(roomId, profileId, chatMessage);
 
     this.server.to(roomLabel).emit('message:new', {
       // message:new 이벤트로 방 참가자 모두에게 전송
