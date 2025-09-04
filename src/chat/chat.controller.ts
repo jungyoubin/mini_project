@@ -69,6 +69,7 @@ export class ChatController {
     return this.chatService.leaveRoom(user.sub, roomId);
   }
 
+  // 메시지 가져오기
   @UseGuards(JwtAuthGuard)
   @Get('room/:roomId/message')
   async listRoomMessages(
