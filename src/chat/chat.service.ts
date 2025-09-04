@@ -299,6 +299,56 @@ export class ChatService {
     };
   }
 
+  // 메시지 가져오기
+  async getRoomMessages(roomId: string, limit: number, cursorId?: string) {
+    const query: any = { roomId };
+    if (cursorId) {
+      query.messageId = { $lt: cursorId };
+    }
+
+    const rows = await this.chatMessageModel
+      .find(query)
+      .sort({ messageId: -1 }) // 최신 → 과거
+      .limit(limit + 1)
+      .lean()
+      .exec();
+
+    const hasMore = rows.length > limit; // 뒤에 더 있는지 확인
+
+    // 응답으로 내보낼 실제 데이터 배열
+    // hasMore이 true면, 1개를 버리고 limit갯수만, false이면 rows 보내기
+    const page = hasMore ? rows.slice(0, limit) : rows;
+
+    if (page.length === 0) {
+      return { roomId, messages: [], nextCursor: null, hasMore: false };
+    }
+
+    // 메세지에 있는 profileIds 집합으로 가져오기
+    const uniqueProfileIds = Array.from(new Set(rows.map((r: any) => r.profileId)));
+
+    // 각 profileId의 userName 조회 (실패하면 null)
+    const nameMap = new Map<string, string | null>();
+    await Promise.all(
+      uniqueProfileIds.map(async (profileId) => {
+        const name = await this.userService.findName(profileId); // Promise<string | null>
+        nameMap.set(profileId, name);
+      }),
+    );
+
+    const messages = rows.map((r: any) => ({
+      roomId: r.roomId,
+      messageId: r.messageId,
+      profileId: r.profileId,
+      userName: nameMap.get(r.profileId) ?? null,
+      messageContent: r.messageContent,
+      messageDate: new Date(r.messageDate).toISOString(), // ISO 문자열로 통일
+    }));
+
+    const nextCursor = messages[messages.length - 1].messageId;
+
+    return { roomId, messages, nextCursor, hasMore };
+  }
+
   async sendMessage(roomId: string, profileId: string, messageContent: string) {
     const now = new Date();
     const doc = await this.chatMessageModel.create({

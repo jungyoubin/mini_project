@@ -7,6 +7,7 @@ import {
   Param,
   Get,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -14,6 +15,7 @@ import { JwtAuthGuard } from '../common/guards/jwt.guard';
 import { ChatGateway } from './chat.gateway';
 import { ReqUser } from '../common/decorators/user.decorator';
 import { JwtPayloadDto } from 'src/common/payload/jwt-dto';
+import { HistoryMessageParamsDto, HistoryMessageQueryDto } from './dto/history-message.dto';
 
 @Controller('chat')
 export class ChatController {
@@ -66,5 +68,15 @@ export class ChatController {
   @Delete(':roomId')
   async leaveRoom(@ReqUser() user: JwtPayloadDto, @Param('roomId') roomId: string) {
     return this.chatService.leaveRoom(user.sub, roomId);
+  }
+
+  // 메시지 가져오기
+  @UseGuards(JwtAuthGuard)
+  @Get(':roomId/message')
+  async listRoomMessages(
+    @Param() { roomId }: HistoryMessageParamsDto,
+    @Query() { limit, cursor }: HistoryMessageQueryDto,
+  ) {
+    return this.chatService.getRoomMessages(roomId, limit, cursor);
   }
 }
