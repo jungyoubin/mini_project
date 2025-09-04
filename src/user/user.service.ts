@@ -120,4 +120,12 @@ export class UserService {
 
     return this.repo.save(user);
   }
+
+  async findName(profileId: string): Promise<string | null> {
+    const row = await this.repo.findOne({
+      where: { profileId },
+      select: ['userName'],
+    });
+    return row?.userName ?? null;
+  }
 }

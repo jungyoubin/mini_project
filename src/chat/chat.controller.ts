@@ -32,7 +32,7 @@ export class ChatController {
 
   // Socket Room 멤버 목록 조회(잘 들어갔는지 확인용)
   @UseGuards(JwtAuthGuard)
-  @Get('room/:roomId/members')
+  @Get(':roomId/members')
   async members(@Param('roomId') roomId: string) {
     return this.chatGateway.getRoomMembers(roomId);
   }
