@@ -72,7 +72,7 @@ export class ChatController {
 
   // 메시지 가져오기
   @UseGuards(JwtAuthGuard)
-  @Get('room/:roomId/message')
+  @Get(':roomId/message')
   async listRoomMessages(
     @Param() { roomId }: HistoryMessageParamsDto,
     @Query() query: HistoryMessageQueryDto,

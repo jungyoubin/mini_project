@@ -318,10 +318,23 @@ export class ChatService {
       return { roomId, messages: [], nextCursor: null, hasMore: false };
     }
 
+    // 메세지에 있는 profileIds 집합으로 가져오기
+    const uniqueProfileIds = Array.from(new Set(rows.map((r: any) => r.profileId)));
+
+    // 각 profileId의 userName 조회 (실패하면 null)
+    const nameMap = new Map<string, string | null>();
+    await Promise.all(
+      uniqueProfileIds.map(async (profileId) => {
+        const name = await this.userService.findName(profileId); // Promise<string | null>
+        nameMap.set(profileId, name);
+      }),
+    );
+
     const messages = rows.map((r: any) => ({
       roomId: r.roomId,
       messageId: r.messageId,
       profileId: r.profileId,
+      userName: nameMap.get(r.profileId) ?? null,
       messageContent: r.messageContent,
       messageDate: new Date(r.messageDate).toISOString(), // ISO 문자열로 통일
     }));
