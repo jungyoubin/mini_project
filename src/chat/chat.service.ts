@@ -300,18 +300,27 @@ export class ChatService {
   }
 
   // 메시지 가져오기
-  async getRoomMessages(roomId: string, limit: number, offset = 0) {
+  async getRoomMessages(roomId: string, limit: number, cursorId?: string) {
+    const query: any = { roomId };
+    if (cursorId) {
+      query.messageId = { $lt: cursorId };
+    }
+
     const rows = await this.chatMessageModel
-      .find({ roomId })
-      .sort({ messageDate: -1 }) // 최신 → 과거
-      .skip(offset)
-      .limit(limit)
+      .find(query)
+      .sort({ messageId: -1 }) // 최신 → 과거
+      .limit(limit + 1)
       .lean()
       .exec();
 
-    if (rows.length === 0) {
-      // 메시지 없으면 종료
-      return { roomId, messages: [], hasMore: false };
+    const hasMore = rows.length > limit; // 뒤에 더 있는지 확인
+
+    // 응답으로 내보낼 실제 데이터 배열
+    // hasMore이 true면, 1개를 버리고 limit갯수만, false이면 rows 보내기
+    const page = hasMore ? rows.slice(0, limit) : rows;
+
+    if (page.length === 0) {
+      return { roomId, messages: [], nextCursor: null, hasMore: false };
     }
 
     // 메세지에 있는 profileIds 집합으로 가져오기
@@ -335,10 +344,9 @@ export class ChatService {
       messageDate: new Date(r.messageDate).toISOString(), // ISO 문자열로 통일
     }));
 
-    const hasMore = messages.length === limit; // limit 이상(꽉 채워 왔으면)이면 true 미만이면 false
-    // 단점 딱 맞게 채워져 있으면 true 여도 더 없을 수 있다.
+    const nextCursor = messages[messages.length - 1].messageId;
 
-    return { roomId, messages, hasMore };
+    return { roomId, messages, nextCursor, hasMore };
   }
 
   async sendMessage(roomId: string, profileId: string, messageContent: string) {

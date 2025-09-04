@@ -75,8 +75,8 @@ export class ChatController {
   @Get(':roomId/message')
   async listRoomMessages(
     @Param() { roomId }: HistoryMessageParamsDto,
-    @Query() { limit, offset }: HistoryMessageQueryDto,
+    @Query() { limit, cursor }: HistoryMessageQueryDto,
   ) {
-    return this.chatService.getRoomMessages(roomId, limit, offset);
+    return this.chatService.getRoomMessages(roomId, limit, cursor);
   }
 }
