@@ -35,8 +35,10 @@ export class BoardService {
       .updateOne({ boardId }, { $set: { [key]: now } }, { upsert: false })
       .exec();
 
-    // 좋아요 개수 반환
-    // const likeCount = await this.countLikes(boardId);
+    /*
+    추후 좋아요 개수 반환 기능이 추가되었을때 사용되는 코드
+    const likeCount = await this.countLikes(boardId);
+    */
     return { boardId, likedAt: now };
   }
 
@@ -51,8 +53,10 @@ export class BoardService {
     // 상태와 무관하게 항상 unset
     await this.boardModel.updateOne({ boardId }, { $unset: { [key]: '' } }).exec();
 
-    // 좋아요 개수 반환
-    // const likeCount = await this.countLikes(boardId);
+    /*
+    추후 좋아요 개수 반환 기능이 추가되었을때 사용되는 코드
+    const likeCount = await this.countLikes(boardId);
+    */
     return { boardId };
   }
 
