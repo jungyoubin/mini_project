@@ -57,6 +57,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userLabel = `user:${profileId}`;
     client.join(userLabel); // socketIdrk user:{profileId} 룸에 저장됨
 
+    // 연결 시 이름 조회해서 socket 캐시
+    const userName = await this.userService.findName(profileId); // userName ?? null
+
+    if (userName == null) {
+      client.emit('error', { code: 'USER_NAME_MISSING', message: '사용자 이름이 없습니다.' });
+      client.disconnect(true);
+      return;
+    }
+    client.data.userName = userName;
+
     // 자동 재조인하기 -> profileId로 DB조회 하고 room:{roomId}에 자동 조인시키기
     try {
       const roomIds = await this.chatService.findRoomIdsByMember(profileId); // DB에서 사용자가 들어간 채팅방 ID 가져오기
@@ -92,14 +102,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // socketsJoin(room:roomId) :그 소켓들을 채팅방룸에 넣기
     await this.server.to(userLabel).socketsJoin(roomLabel);
 
-    // 유저 이름 조회
-    let userName: string | undefined;
-    try {
-      const name = await this.userService.findName(profileId);
-      userName = name ?? undefined;
-    } catch (e) {
-      this.logger.warn(`사용자이름 읽기 실패: ${e?.message}`);
-    }
+    const sockets = await this.server.in(userLabel).fetchSockets();
+    if (sockets.length === 0) throw new Error('사용자의 살아있는 소켓이 없다');
+
+    const userName: string = sockets[0].data.userName;
 
     // 방의 다른 사람들에게만 "누가 들어왔다" 알림
     this.server.to(roomLabel).emit('system:userJoin', {
@@ -141,6 +147,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (!profileId) return;
     const { roomId, chatMessage } = dto;
+    const userLabel = `user:${profileId}`;
     const roomLabel = `room:${roomId}`;
 
     /*
@@ -149,15 +156,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     소켓을 재연결 하였을때 다시 DB 조회
     */
 
-    let userName = client.data?.userName;
-    if (!userName) {
-      try {
-        userName = await this.userService.findName(profileId);
-        if (userName) client.data.userName = userName; // 조회한 값은 소켓 캐시에 넣기
-      } catch (e) {
-        this.logger.warn(`사용자이름 읽기 실패: ${e?.message}`);
-      }
-    }
+    const sockets = await this.server.in(userLabel).fetchSockets();
+    const userName = sockets[0].data.userName;
+
     const saved = await this.chatService.sendMessage(roomId, profileId, chatMessage);
 
     this.server.to(roomLabel).emit('message:new', {
