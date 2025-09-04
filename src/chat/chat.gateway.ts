@@ -7,7 +7,8 @@ import {
   MessageBody,
   ConnectedSocket,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, UsePipes, ValidationPipe } from '@nestjs/common';
+import { WsException } from '@nestjs/websockets';
 import { Socket, Namespace } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -138,6 +139,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   // 메시지 전송 : DB 저장 -> 방 전체(본인 포함) 브로드캐스트 진행하기
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   @SubscribeMessage('message:send')
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
@@ -147,6 +149,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (!profileId) return;
     const { roomId, chatMessage } = dto;
+
     const userLabel = `user:${profileId}`;
     const roomLabel = `room:${roomId}`;
 

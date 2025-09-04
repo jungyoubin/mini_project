@@ -1,13 +1,12 @@
-import { IsNotEmpty, IsString, MaxLength, IsUUID } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsString, MinLength, MaxLength, IsUUID, Matches } from 'class-validator';
 
 export class SendMessageDto {
   @IsUUID('4')
   roomId: string;
 
   @IsString()
-  @IsNotEmpty() // 빈 문자열 차단
-  @MaxLength(200)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value)) // 공백 제거
+  @MinLength(1, { message: '메시지는 최소 1자입니다.' })
+  @MaxLength(200, { message: '메시지는 최대 200자입니다.' })
+  @Matches(/\S/, { message: '메시지는 공백만으로 구성될 수 없습니다.' })
   chatMessage: string;
 }
