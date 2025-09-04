@@ -301,7 +301,7 @@ export class ChatService {
 
   // 메시지 가져오기
   async getRoomMessages(roomId: string, limit: number, cursor?: Date) {
-    const query: any = { roomId };
+    const query: any = { roomId }; // 해당 방의 메시지만
     if (cursor) {
       query.messageDate = { $lt: cursor }; // cursor 이전(과거)만
     }
@@ -313,6 +313,11 @@ export class ChatService {
       .lean()
       .exec();
 
+    if (rows.length === 0) {
+      // 메시지 없으면 종료
+      return { roomId, messages: [], nextCursor: null, hasMore: false };
+    }
+
     const messages = rows.map((r: any) => ({
       roomId: r.roomId,
       messageId: r.messageId,
@@ -321,9 +326,16 @@ export class ChatService {
       messageDate: new Date(r.messageDate).toISOString(), // ISO 문자열로 통일
     }));
 
+    // 다음 커서는 이번 페이지의 '가장 과거' 시간
     const last = rows[rows.length - 1];
-    const nextCursor = last ? new Date(last.messageDate).toISOString() : null;
-    const hasMore = rows.length === limit;
+    const nextCursor = new Date(last.messageDate).toISOString();
+
+    // 마지막 시간보다 과거 문서 존재 여부만 확인
+    const more = await this.chatMessageModel.exists({
+      roomId,
+      messageDate: { $lt: last.messageDate }, // $lt: ~~ : ~~ 보다 작은 문서 조회
+    });
+    const hasMore = !!more; // 있으면 true, 없으면 false
 
     return { roomId, messages, nextCursor, hasMore };
   }

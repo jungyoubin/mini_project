@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../common/guards/jwt.guard';
 import { ChatGateway } from './chat.gateway';
 import { ReqUser } from '../common/decorators/user.decorator';
 import { JwtPayloadDto } from 'src/common/payload/jwt-dto';
+import { HistoryMessageParamsDto, HistoryMessageQueryDto } from './dto/history-message.dto';
 
 @Controller('chat')
 export class ChatController {
@@ -73,14 +74,12 @@ export class ChatController {
   @UseGuards(JwtAuthGuard)
   @Get('room/:roomId/message')
   async listRoomMessages(
-    @Param('roomId') roomId: string,
-    @Query('limit') limits: string,
-    @Query('cursor') cursorQ: string,
+    @Param() { roomId }: HistoryMessageParamsDto,
+    @Query() query: HistoryMessageQueryDto,
   ) {
-    const parsed = parseInt(limits ?? '50', 10);
-    const limit = isNaN(parsed) ? 50 : parsed;
-    const cursor = cursorQ ? new Date(cursorQ) : undefined; // 없으면 undefined
+    const limit = query.limit; // 1~200, 기본 50
+    const cursorDate = query.cursor ? new Date(query.cursor) : undefined;
 
-    return this.chatService.getRoomMessages(roomId, limit, cursor);
+    return this.chatService.getRoomMessages(roomId, limit, cursorDate);
   }
 }
