@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, FilterQuery } from 'mongoose';
 import { Board, BoardDocument } from './schemas/board.schema';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { ModifyBoardDto } from './dto/modify-board.dto';
@@ -104,14 +104,38 @@ export class BoardService {
   */
 
   // 전체 조회
-  async findAll() {
-    return (
-      this.boardModel
-        .find({}, { boardContent: 0 }) // boardContent : 0 으로 하여서 해당 내용은 안 가져오기
-        // .sort({ boardDate: -1 }) // 최신순으로 정렬이 필요하면 주석 제거하기
-        .lean()
-        .exec()
-    );
+  async findAll(limit: number, cursorDate?: string, cursorId?: string) {
+    let filter: FilterQuery<BoardDocument> = {}; // MongoDB find()에 넘길 조건(처음에는 조건없음)
+
+    // cursorId가 있으면, 그 글의 날짜 기준으로 "더 과거"만
+    if (cursorDate && cursorId) {
+      const boundaryDate = new Date(cursorDate);
+      if (!isNaN(boundaryDate.getTime())) {
+        // 유효한지 확인하기(아니면 getTime이 NaN 처리)
+        filter = {
+          $or: [
+            { boardDate: { $lt: boundaryDate } }, // 날짜가 경계 날짜보다 더 이전인지
+            { boardDate: boundaryDate, boardId: { $lt: cursorId } }, // 날짜가 같을때, 아이디가 더 작은지
+          ],
+        };
+      }
+    }
+
+    const rows = await this.boardModel
+      .find(filter, { boardContent: 0, _id: 0 }) // 내용 제외
+      .sort({ boardDate: -1, boardId: -1 }) // 최신 → 과거 (DATE만 정렬)
+      .limit(limit + 1) // hasMore 판별용 peek
+      .lean()
+      .exec();
+
+    const hasMore = rows.length > limit; // limit 보다 많을 경우 limit + 1 개를 가져오기에
+    const items = hasMore ? rows.slice(0, limit) : rows; // slice : 0부터 limit-1 까지
+
+    const last = items.length ? items[items.length - 1] : null;
+    const nextCursorDate = last ? (last.boardDate as Date).toISOString() : null;
+    const nextCursorId = last ? String((last as any).boardId) : null;
+
+    return { items, hasMore, nextCursorDate, nextCursorId };
   }
 
   // 개별 조회

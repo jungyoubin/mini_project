@@ -1,4 +1,14 @@
-import { Body, Controller, Post, Req, UseGuards, Get, Patch, Delete, Param } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Query,
+  UseGuards,
+  Get,
+  Patch,
+  Delete,
+  Param,
+} from '@nestjs/common';
 import { BoardService } from './board.service';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { ModifyBoardDto } from './dto/modify-board.dto';
@@ -43,9 +53,13 @@ export class BoardController {
   // 전체 조회
   @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll() {
-    const boards = await this.boardService.findAll();
-    return { boards };
+  async findAll(
+    @Query('limit') limit = '5',
+    @Query('cursorDate') cursorDate?: string,
+    @Query('cursorId') cursorId?: string,
+  ) {
+    const lim = parseInt(limit, 10);
+    return this.boardService.findAll(lim, cursorDate, cursorId);
   }
 
   // 개별 조회
