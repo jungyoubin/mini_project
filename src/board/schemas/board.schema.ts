@@ -27,10 +27,13 @@ export class Board {
   // key = profileId, value = Date
   @Prop({ type: Map, of: Date, default: {}, required: true })
   boardLikedPeople: Map<string, Date>;
+
   /* 
   좋아요 갯수에 대해서는 따로 저장하지 않고 필요할 때,
   다음과 같은 $size를 통하여서 집계하여서 사용하려고 합니다.
-  boardLikedCount: { $size: "$boardLikedPeople" }
+  boardLikedCount: { $size: { $objectToArray: "$boardLikedPeople" } }
   */
 }
 export const BoardSchema = SchemaFactory.createForClass(Board);
+
+BoardSchema.index({ boardDate: -1, boardId: -1 });

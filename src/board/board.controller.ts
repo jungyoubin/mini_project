@@ -53,9 +53,13 @@ export class BoardController {
   // 전체 조회
   @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll(@Query('limit') limit = '20', @Query('cursor') cursor?: string) {
-    const lim: number = Number.parseInt(limit, 10);
-    return this.boardService.findAll(lim, cursor);
+  async findAll(
+    @Query('limit') limit = '5',
+    @Query('cursorDate') cursorDate?: string,
+    @Query('cursorId') cursorId?: string,
+  ) {
+    const lim = parseInt(limit, 10);
+    return this.boardService.findAll(lim, cursorDate, cursorId);
   }
 
   // 개별 조회

@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, FilterQuery } from 'mongoose';
 import { Board, BoardDocument } from './schemas/board.schema';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { ModifyBoardDto } from './dto/modify-board.dto';
@@ -104,23 +104,18 @@ export class BoardService {
   */
 
   // 전체 조회
-  async findAll(limit = 20, cursorId?: string) {
-    let filter: any = {};
+  async findAll(limit: number, cursorDate?: string, cursorId?: string) {
+    let filter: FilterQuery<BoardDocument> = {}; // MongoDB find()에 넘길 조건(처음에는 조건없음)
 
     // cursorId가 있으면, 그 글의 날짜 기준으로 "더 과거"만
-    if (cursorId) {
-      const cur = await this.boardModel
-        .findOne({ boardId: cursorId })
-        .select({ boardDate: 1, _id: 0 })
-        .lean()
-        .exec();
-
-      if (cur) {
+    if (cursorDate && cursorId) {
+      const boundaryDate = new Date(cursorDate);
+      if (!isNaN(boundaryDate.getTime())) {
+        // 유효한지 확인하기(아니면 getTime이 NaN 처리)
         filter = {
           $or: [
-            // 경계 안정화를 위해 (date < cursorDate) OR (date == cursorDate AND id < cursorId)
-            { boardDate: { $lt: cur.boardDate } },
-            { boardDate: cur.boardDate, boardId: { $lt: cursorId } },
+            { boardDate: { $lt: boundaryDate } }, // 날짜가 경계 날짜보다 더 이전인지
+            { boardDate: boundaryDate, boardId: { $lt: cursorId } }, // 날짜가 같을때, 아이디가 더 작은지
           ],
         };
       }
@@ -133,11 +128,14 @@ export class BoardService {
       .lean()
       .exec();
 
-    const hasMore = rows.length > limit;
-    const items = hasMore ? rows.slice(0, limit) : rows;
-    const nextCursor = items.length ? items[items.length - 1].boardId : null;
+    const hasMore = rows.length > limit; // limit 보다 많을 경우 limit + 1 개를 가져오기에
+    const items = hasMore ? rows.slice(0, limit) : rows; // slice : 0부터 limit-1 까지
 
-    return { items, nextCursor, hasMore };
+    const last = items.length ? items[items.length - 1] : null;
+    const nextCursorDate = last ? (last.boardDate as Date).toISOString() : null;
+    const nextCursorId = last ? String((last as any).boardId) : null;
+
+    return { items, hasMore, nextCursorDate, nextCursorId };
   }
 
   // 개별 조회
